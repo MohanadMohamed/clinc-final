@@ -1,35 +1,31 @@
 # Project status
 
-Updated: 2026-10-23.
+Updated: 2026-10-23. **Current activity: project-wide baseline review. Implementation is paused.**
 
-**Sprint 0 / Task 0A: COMPLETE — documentation scope only. Next task: 0B.** No backend/frontend business features have been implemented. Checkpoint: the commit containing these documents, titled `docs: establish Sprint 0 Task 0A clinic foundation` (resolve with `git log -1 --oneline` at handoff).
+The [confirmed product baseline](requirements/BASELINE.md) governs every task: Arabic RTL single-doctor clinic, two Windows PCs, pywebview clients, FastAPI/PostgreSQL Windows services on the doctor PC, central database, LAN HTTPS and no Internet needed in normal operation. Develop on Ubuntu; build/test Windows packages on Windows.
 
-The product is an original Arabic RTL Neurology & Psychiatry clinic system for one doctor. Fixed stack: React + TypeScript, FastAPI, PostgreSQL. The doctor PC hosts the application and sole database; the receptionist PC is browser-only over LAN HTTPS. Permissions are enforced by the API using separate accounts. Development and acceptance data must be synthetic.
+## Existing work
 
-- [Completion contract](../AGENTS.md)
-- [ADR-001: architecture, secrets and development/deployment decisions](architecture/ADR-001.md)
-- [MVP: journeys, role matrix, boundaries and next-task acceptance criteria](requirements/MVP.md)
-- [Task 0A report: verified reference workflows, evidence and exact check commands](tasks/0A.md)
-- [Domain glossary](../GLOSSARY.md)
+- **0A:** Historical documentation checkpoint `50875ca`. Its browser-only topology and partial stack have been revised to match the confirmed baseline. Reference workflow evidence remains in [0A](tasks/0A.md); its test counts and next-task statements describe that historical checkpoint.
+- **0B:** Partial uncommitted scaffold, preserved during review. Backend health/readiness, SQLAlchemy factory, Alembic baseline, frontend RTL shell and development/test configuration exist. It is not complete or accepted. See [review findings](tasks/baseline-review.md).
+- **Baseline review:** Governing documents aligned; detailed business rules remain proposals for review. No application changes, database operations or external publishing in this review.
 
-## Verification
+## Verification status
 
-| Check | Status / evidence |
+| Area | Evidence / status |
 | --- | --- |
-| Public source inspection | PASS: four controllers inspected at commit `99638225ba0876261c2c16c3bd2f9b83f4abbc19`; claim-specific links in 0A report |
-| Documentation and local cross-links | PASS: first Python command in the 0A report checked 6 UTF-8 documents, 26 local links, balanced fences and next task 0B |
-| Direct GitHub HTML link check | FAIL: initial Python `urllib` HEAD requests timed out; no claim of HTML/browser verification |
-| External evidence source fallback | PASS: second Python command in the 0A report fetched 4 commit-pinned raw files with HTTP 200 and validated all 14 line references |
-| Git diff and staged scope | PASS: `git diff --check`, `git diff --cached --check`, `git diff --cached --name-only` and `git diff --cached --stat`; exactly 6 Markdown files, no application/secret/data files |
-| Application/browser/database/reference runtime | NOT TESTED: no application or database execution in this task |
-| Windows services, LAN HTTPS, printing and restore | NOT TESTED: future deployment acceptance requires actual execution |
+| Current documentation | PASS: cross-link/file check and `git diff --check`; commands recorded in the baseline review |
+| Existing scaffold preserved | PASS: before/after SHA-256 manifest comparison during this review |
+| Earlier backend checks | Historical PASS: 2 pytest tests and disposable PostgreSQL baseline round-trip/readiness; not rerun in this review |
+| Earlier frontend checks | Historical PASS: `npm run build` and `npm test` (2 component tests); completed output recovered after interruption; not rerun in this review |
+| Browser/Playwright and actual UI → proxy → API → DB | NOT TESTED end to end |
+| Windows desktop, installers, services, LAN TLS, Internet-disconnected operation | NOT TESTED |
+| Clinical compliance/readiness | Not established by these technical checks |
 
-## Open gates
+## Open work and task order
 
-No architecture blocker to completing 0A. Runtime pins, authentication library/timeouts, Windows service/TLS choices, recovery objectives/key custody, timezone/currency and retention/correction/export policies need resolution at the deadlines in ADR-001. No real data or live deployment is authorized.
+Review the remaining workflow/permission details and incomplete scaffold before resuming implementation. Missing 0B acceptance work includes an Ubuntu README with exact setup/run/check commands, integrated HTTP/browser verification and a task completion report. Desktop packaging, production UI serving, certificate lifecycle and Windows acceptance are future implementation work with scope still to be assigned.
 
-The direct HTML-link network failure does not block source evidence: the identical commit/path contents and referenced line bounds were verified using the raw-content host. The initial fence-check implementation counted a code literal; it was corrected to count line-start fences and rerun successfully. Exact final commands and limitations are in the 0A report.
+The previous instruction named **1A** after 0B; no 1A scope is confirmed or started. Earlier proposed 0C/0D ordering is withdrawn. **Next task ID: 0B (review outstanding acceptance before any resumption); then 1A when scoped and authorized.**
 
-## Next task
-
-**0B — Local development scaffold.** Acceptance criteria are in the MVP. Establish reproducible tool versions, safe configuration, the original application skeleton, Alembic wiring and a real localhost UI/API/database health path. Do not add registration, appointments, visits or billing features in 0B. Proposed 0C/0D criteria are planning only; no future task has started.
+Links: [AGENTS](../AGENTS.md), [ADR-001](architecture/ADR-001.md), [draft MVP](requirements/MVP.md), [glossary](../GLOSSARY.md).
