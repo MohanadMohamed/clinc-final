@@ -3,6 +3,8 @@ from pathlib import Path
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.scheduling import SchedulingPolicy
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -13,6 +15,8 @@ class Settings(BaseSettings):
     )
     database_url: SecretStr
     migration_database_url: SecretStr | None = None
+
+    appointment_policy: SchedulingPolicy = SchedulingPolicy()
 
     public_origin: str = "https://clinic.local"
 

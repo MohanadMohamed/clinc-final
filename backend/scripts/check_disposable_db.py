@@ -87,6 +87,10 @@ def main():
                     "auth_throttles",
                     "auth_audit",
                     "auth_bootstrap",
+                    "patients",
+                    "patient_audit",
+                    "appointments",
+                    "appointment_audit",
                 }
             finally:
                 engine.dispose()
@@ -96,7 +100,7 @@ def main():
                 assert client.get("/api/health").status_code == 200
                 assert client.get("/api/health/ready").json() == {"status": "ready"}
             check_web(env, root / "web.log")
-            print("PASS: baseline round-trip, auth tables only, real DB readiness")
+            print("PASS: migration round-trip, current schema, real DB readiness")
         finally:
             subprocess.run(ctl + ["-m", "fast", "-w", "stop"], check=True)
 

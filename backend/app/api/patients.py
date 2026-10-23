@@ -16,7 +16,7 @@ Actor = Annotated[User, Depends(require_role("doctor", "receptionist"))]
 
 
 def get_patient(db, patient_id):
-    patient = db.get(Patient, patient_id)
+    patient = db.get(Patient, patient_id, with_for_update=True)
     if patient is None:
         raise HTTPException(404, "Patient not found")
     return patient

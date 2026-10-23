@@ -8,3 +8,4 @@ httpx
 pytest
 ruff
 argon2-cffi
+tzdata

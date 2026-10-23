@@ -2,7 +2,7 @@ from alembic import context
 
 from app.core.config import Settings
 from app.core.db import Base, build_engine
-from app.models import auth, patient  # noqa: F401
+from app.models import appointment, auth, patient  # noqa: F401
 
 settings = Settings()
 url = (settings.migration_database_url or settings.database_url).get_secret_value()

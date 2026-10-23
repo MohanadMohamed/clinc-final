@@ -15,7 +15,10 @@ def build_engine(url: str):
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=0,
-        connect_args={"connect_timeout": 3, "options": "-c statement_timeout=3000"},
+        connect_args={
+            "connect_timeout": 3,
+            "options": "-c statement_timeout=3000 -c timezone=UTC",
+        },
         hide_parameters=True,
     )
 
