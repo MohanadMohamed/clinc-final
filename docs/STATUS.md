@@ -1,14 +1,14 @@
 # Project status
 
-Updated: 2026-10-23. **Sprint 2 Task 2A: administrative patient backend implemented. Next task: 2B.**
+Updated: 2026-10-23. **Sprint 2 Task 2B: Arabic patients frontend slice implemented. Next task: 3A.**
 
-[Task 2A report](tasks/2A.md) gives the API contract, duplicate handling, files and exact checks. [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md) and [baseline](requirements/BASELINE.md) remain product constraints. Earlier [Task 1A](tasks/1A.md) backend authorization evidence remains in its report. Unfinished frontend and AGENTS.md working-tree edits predate this task and were preserved outside the Task 2A checkpoint.
+[Task 2B report](tasks/2B.md) gives the UI contract, files and exact checks. [Task 2A](tasks/2A.md) remains backend evidence; [Task 1A](tasks/1A.md) documents server authorization. [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md) and [baseline](requirements/BASELINE.md) remain product constraints.
 
 | Result | Command/check | Evidence |
 | --- | --- | --- |
-| PASS | `cd backend && .venv/bin/pytest -q` | 17 passed, one known Starlette TestClient deprecation warning. Disposable PostgreSQL fixture checks Alembic migration round trip and schema drift. |
-| PASS | `cd backend && .venv/bin/ruff check app migrations tests` | All checks passed. |
-| PASS | `cd backend && .venv/bin/ruff format --check app migrations tests` | 28 files formatted. |
-| NOT TESTED | Persistent/live database migration, Windows deployment, frontend patient UI | Not part of backend Task 2A; no live database changed. |
+| PASS | `cd frontend && npm run build` | TypeScript and Vite build completed, 2084 modules transformed. |
+| PASS | `cd frontend && npm test` | 3 tests passed. |
+| PASS | `python3 frontend/tests/run_browser.py` | Real Chrome/local HTTPS/disposable PostgreSQL; patient interactions, anonymous denial, invalid login, roles, refresh, RTL, mobile menu and persistence after FastAPI restart passed. |
+| NOT TESTED | Windows pywebview and real clinic deployment | Out of scope. |
 
-No clinical records or patient data were introduced. Technical checks do not establish clinical readiness or compliance. Next task: **2B**, only when requested.
+The pre-existing AGENTS.md working-tree edit remains uncommitted. No clinical data was used. Technical checks do not establish clinical readiness or compliance. Next task: **3A**, only when requested.

@@ -1,29 +1,11 @@
-import { useQuery } from "@tanstack/react-query"
-import { Route, Routes, Link } from "react-router-dom"
-import { z } from "zod"
-
-async function checkHealth(signal: AbortSignal) {
-  await Promise.all([
-    ["/api/health", "ok"], ["/api/health/ready", "ready"],
-  ].map(async ([url, expected]) => {
-    const response = await fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) })
-    if (!response.ok) throw new Error("Unavailable")
-    z.object({ status: z.literal(expected) }).parse(await response.json())
-  }))
-  return true
-}
-
-function Home() {
-  const health = useQuery({ queryKey: ["health"], queryFn: ({ signal }) => checkHealth(signal), retry: false })
-  return <main className="mx-auto flex max-w-3xl flex-col gap-6 p-8">
-    <h1 className="text-2xl font-semibold">عيادة المخ والأعصاب والطب النفسي</h1>
-    <p>بيئة التطوير الأولية</p>
-    <p role="status" aria-live="polite">{health.isPending ? "جارٍ التحقق من الاتصال…" : health.isError ? "تعذر الاتصال بالخادم أو قاعدة البيانات" : "الخادم وقاعدة البيانات متصلان"}</p>
-  </main>
-}
-
-export default function App() {
-  return <Routes><Route path="/" element={<Home />} />
-    <Route path="*" element={<main className="p-8"><h1>الصفحة غير موجودة</h1><Link to="/">العودة للرئيسية</Link></main>} />
-  </Routes>
-}
+import PatientsPage from "./PatientsPage"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { Activity, CalendarDays, ClipboardList, LogOut, Menu, Users, X } from "lucide-react"
+import { login, logout, me, type User } from "@/lib/api"
+function LoginPage(){const q=useQueryClient(),[error,setError]=useState("");const action=useMutation({mutationFn:({username,password}:{username:string;password:string})=>login(username,password),onSuccess:u=>{q.setQueryData(["me"],u);location.assign("/")},onError:e=>setError(e instanceof Error?e.message:"تعذر تسجيل الدخول")});return <main className="login-wrap"><section className="login-card"><span className="brand-mark"><Activity/></span><p className="eyebrow">بوابة العيادة</p><h1>مرحباً بعودتك</h1><p className="subtle">سجّل الدخول للمتابعة إلى مساحة العمل</p><form onSubmit={e=>{e.preventDefault();const d=new FormData(e.currentTarget);setError("");action.mutate({username:String(d.get("username")),password:String(d.get("password"))})}}><label htmlFor="username">اسم المستخدم</label><input id="username" name="username" autoComplete="username" required/><label htmlFor="password">كلمة المرور</label><input id="password" name="password" type="password" autoComplete="current-password" required/>{error&&<p role="alert" className="error">{error}</p>}<button className="primary" disabled={action.isPending}>{action.isPending?"جارٍ التحقق…":"تسجيل الدخول"}</button></form><p className="login-foot">اتصال آمن داخل شبكة العيادة</p></section><aside className="login-aside"><div><p>رعاية متصلة<br/>ومساحة عمل موثوقة</p><small>عيادة المخ والأعصاب والطب النفسي</small></div><span/></aside></main>}
+const nav: {to:string;text:string;icon:typeof Activity;roles:User["role"][]}[]=[{to:"/",text:"نظرة عامة",icon:Activity,roles:["doctor","receptionist"]},{to:"/appointments",text:"المواعيد",icon:CalendarDays,roles:["doctor","receptionist"]},{to:"/patients",text:"المرضى",icon:Users,roles:["doctor","receptionist"]},{to:"/workspace",text:"مساحة الطبيب",icon:ClipboardList,roles:["doctor"]}]
+function Shell({user}:{user:User}){const qc=useQueryClient(),go=useNavigate(),[open,setOpen]=useState(false),out=useMutation({mutationFn:logout,onSuccess:()=>{qc.clear();go("/login",{replace:true})}});return <div className="shell"><aside className={`sidebar ${open?"open":""}`}><div className="sidebrand"><span className="brand-mark"><Activity/></span><b>عيادة المخ والأعصاب</b><button className="close" aria-label="إغلاق القائمة" onClick={()=>setOpen(false)}><X/></button></div><p className="caption">القائمة الرئيسية</p><nav aria-label="التنقل الرئيسي">{nav.filter(x=>x.roles.includes(user.role)).map(x=><Link key={x.to} to={x.to} onClick={()=>setOpen(false)}><x.icon size={19}/>{x.text}</Link>)}</nav><small className="connected">● متصل بالخادم</small></aside>{open&&<button className="scrim" aria-label="إغلاق القائمة" onClick={()=>setOpen(false)}/>}<div className="main"><header><button className="menu" aria-label="فتح القائمة" onClick={()=>setOpen(true)}><Menu/></button><span>مساحة العمل</span><div className="account"><b>{user.role==="doctor"?"الطبيب":"موظف الاستقبال"}</b><small>{user.username}</small><button onClick={()=>out.mutate()} disabled={out.isPending}><LogOut size={17}/> تسجيل الخروج</button></div></header><main className="content"><p className="eyebrow">مساحة العمل</p><h1>صباح الخير</h1><p className="subtle">اختر قسماً للمتابعة. ستظهر تفاصيل العمل عند توفرها.</p><Routes><Route path="/patients" element={<PatientsPage/>}/><Route path="*" element={<section className="empty"><span className="brand-mark"><Activity/></span><h2>مساحة العمل جاهزة</h2><p>لا توجد معلومات لعرضها الآن.</p></section>}/></Routes></main></div></div>}
+function Protected(){const q=useQuery({queryKey:["me"],queryFn:me,retry:false});if(q.isPending)return <main className="state" role="status">جارٍ استعادة الجلسة…</main>;if(q.isError)return <Navigate to="/login" replace/>;return <Shell user={q.data}/>}
+export default function App(){return <Routes><Route path="/login" element={<LoginPage/>}/><Route path="*" element={<Protected/>}/></Routes>}
