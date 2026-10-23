@@ -1,31 +1,33 @@
 # Project status
 
-Updated: 2026-10-23. **Current activity: project-wide baseline review. Implementation is paused.**
+Updated: 2026-10-23. **Sprint 0 Task 0A: COMPLETE — documentation scope only. Next task: 0B.**
 
-The [confirmed product baseline](requirements/BASELINE.md) governs every task: Arabic RTL single-doctor clinic, two Windows PCs, pywebview clients, FastAPI/PostgreSQL Windows services on the doctor PC, central database, LAN HTTPS and no Internet needed in normal operation. Develop on Ubuntu; build/test Windows packages on Windows.
+The [confirmed product baseline](requirements/BASELINE.md) remains authoritative: original Arabic RTL single-doctor Neurology & Psychiatry clinic, two Windows PCs, pywebview clients, FastAPI/PostgreSQL Windows services on the doctor PC, one central database, LAN HTTPS and no Internet required during normal operation. Independent accounts and API-enforced role/field permissions protect clinical notes. All development data is synthetic. Ubuntu development does not establish Windows acceptance.
 
-## Existing work
+## This checkpoint
 
-- **0A:** Historical documentation checkpoint `50875ca`. Its browser-only topology and partial stack have been revised to match the confirmed baseline. Reference workflow evidence remains in [0A](tasks/0A.md); its test counts and next-task statements describe that historical checkpoint.
-- **0B:** Partial uncommitted scaffold, preserved during review. Backend health/readiness, SQLAlchemy factory, Alembic baseline, frontend RTL shell and development/test configuration exist. It is not complete or accepted. See [review findings](tasks/baseline-review.md).
-- **Baseline review:** Governing documents aligned; detailed business rules remain proposals for review. No application changes, database operations or external publishing in this review.
+Updated the five requested documents: [AGENTS](../AGENTS.md), [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md), this status and [0A report](tasks/0A.md). The report contains verified registration, appointment, visit and billing source behavior at pinned commit `99638225ba0876261c2c16c3bd2f9b83f4abbc19`, distinguished from inferences and original clinic proposals.
 
-## Verification status
+Git already existed. The pre-existing untracked `.env.example`, `.gitignore`, `backend/`, `compose.yaml` and `frontend/` partial 0B work is preserved and excluded from this documentation commit. No application code or database was changed in this task. Prior [baseline review](tasks/baseline-review.md) remains historical context.
 
-| Area | Evidence / status |
+## Verification
+
+| Check | Result / evidence |
 | --- | --- |
-| Current documentation | PASS: cross-link/file check and `git diff --check`; commands recorded in the baseline review |
-| Existing scaffold preserved | PASS: before/after SHA-256 manifest comparison during this review |
-| Earlier backend checks | Historical PASS: 2 pytest tests and disposable PostgreSQL baseline round-trip/readiness; not rerun in this review |
-| Earlier frontend checks | Historical PASS: `npm run build` and `npm test` (2 component tests); completed output recovered after interruption; not rerun in this review |
-| Browser/Playwright and actual UI → proxy → API → DB | NOT TESTED end to end |
-| Windows desktop, installers, services, LAN TLS, Internet-disconnected operation | NOT TESTED |
-| Clinical compliance/readiness | Not established by these technical checks |
+| Local Markdown links and fenced blocks | PASS: first Python block in the 0A report checks 8 documents and all local links |
+| Public workflow source targets | PASS: second Python block fetched 4 commit-pinned files with HTTP 200; all 14 line references valid |
+| Source interpretation | PASS: relevant executable methods inspected; limits and proposed clinic behavior labelled separately in 0A |
+| Documentation whitespace and staged scope | PASS: `git diff --check`, `git diff --cached --check`, `git diff --cached --name-only`; only the 5 requested Markdown files staged |
+| Preserved scaffold | PASS: SHA-256 comparison against prior review manifest for 34 source/config/lock files; no implementation changes |
+| Reference application/runtime workflows | NOT TESTED: source inspection only |
+| Application, browser, migrations, Windows, LAN HTTPS and backup/restore | NOT TESTED in this documentation task; earlier smoke results are not current deployment evidence |
 
-## Open work and task order
+Exact reproduction/checkpoint commands are in the 0A report. Original GitHub HTML HEAD checks timed out in the earlier task; the current raw-source checks succeeded. Technical verification does not establish clinical compliance or readiness.
 
-Review the remaining workflow/permission details and incomplete scaffold before resuming implementation. Missing 0B acceptance work includes an Ubuntu README with exact setup/run/check commands, integrated HTTP/browser verification and a task completion report. Desktop packaging, production UI serving, certificate lifecycle and Windows acceptance are future implementation work with scope still to be assigned.
+## Open architecture decisions
 
-The previous instruction named **1A** after 0B; no 1A scope is confirmed or started. Earlier proposed 0C/0D ordering is withdrawn. **Next task ID: 0B (review outstanding acceptance before any resumption); then 1A when scoped and authorized.**
+Runtime pins and reproducibility remain 0B acceptance work. Authentication library/settings and session durations, Windows installer/service wrapper, webview runtime provisioning, TLS hostname/trust/renewal, backup recovery objectives/key custody, clinic timezone/currency and retention/correction/export policy remain open with owners/deadlines in ADR-001. These do not block the 0A documentation deliverables; they gate later implementation and deployment.
 
-Links: [AGENTS](../AGENTS.md), [ADR-001](architecture/ADR-001.md), [draft MVP](requirements/MVP.md), [glossary](../GLOSSARY.md).
+## Next task
+
+**0B — Local development scaffold.** Review the preserved partial work, resolve its outstanding acceptance criteria and document exact Ubuntu setup/run/check commands. Require actual UI/API/database integration evidence and migration checks on a disposable synthetic database. Do not add authentication, patients, appointments, visits or billing features as part of the scaffold. Work resumes only when requested; this task ends at the documentation checkpoint.

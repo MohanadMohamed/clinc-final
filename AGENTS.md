@@ -1,6 +1,6 @@
 # Completion contract
 
-- Implement only the requested task. Do not advance to the next task or sprint without instruction. Use relevant installed skills and read only relevant files.
+- Implement only the currently requested task; use `docs/STATUS.md` for the active scope and handoff. Do not advance to the next task or sprint without instruction. Use relevant installed skills and read only relevant files.
 - Follow [ADR-001](docs/architecture/ADR-001.md) and the [MVP](docs/requirements/MVP.md): original Arabic RTL clinic system, one Neurology & Psychiatry doctor, React + TypeScript, FastAPI, PostgreSQL. Doctor PC hosts the application and sole database; both PCs run a pywebview thin desktop client; receptionist PC runs only that client; FastAPI and PostgreSQL run as Windows services on the doctor PC; deployed LAN traffic uses HTTPS. LAN-only, with no Internet required in normal operation. No third server, microservices or cloud runtime services. Follow the full project-wide [product baseline](docs/requirements/BASELINE.md).
 - Develop on Ubuntu. Build and test Windows packages on Windows (physical machine, VM or Windows CI runner), using PyInstaller and installer tooling selected in the packaging task. Ubuntu checks never establish Windows acceptance.
 - Use the full stack and modular-monolith folder structure in the baseline. Support separate named accounts, with optional additional receptionist users later and one doctor.
@@ -11,6 +11,5 @@
 - Add meaningful tests according to risk. Run actual relevant checks and report PASS / FAIL / NOT TESTED with exact commands and evidence. Missing browser or Windows execution means NOT TESTED.
 - Update [STATUS](docs/STATUS.md) and a short report in `docs/tasks/` listing changed files, checks, known risks and exact run steps. Continue until this task's acceptance criteria pass or blockers are precisely recorded.
 - End with a commit or explicit checkpoint and the next task ID. Do not claim unexecuted tests, deployment or reference workflows as verified.
-
 - Treat public repositories as study references. Review `morluto/rea` for security before optional use; it must never be a runtime dependency. Respect original and third-party licenses; do not blindly copy code or assets.
 - Avoid credentials and medical information in logs, screenshots, fixtures and client storage. Use only synthetic test data where needed. Technical test results do not establish clinical compliance or clinical readiness. Preserve pre-existing edits; do not reset databases, discard work or publish externally without permission.

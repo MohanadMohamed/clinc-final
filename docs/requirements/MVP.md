@@ -90,7 +90,7 @@ List counts, search hints, receipt templates, print routes, logs, error messages
 
 ## Next tasks: acceptance criteria, not implementation authorization
 
-**Current state:** 0A is historical documentation; 0B is partial and implementation is paused for baseline review. The user previously named **1A** as the next task after 0B; its scope must be revised before implementation. Earlier 0C/0D sequencing is withdrawn. The foundation acceptance topics below are retained for review, without authorizing work.
+**Current authorization: Sprint 0 Task 0A only. Next task: 0B.** An existing partial 0B scaffold is preserved outside this documentation task and must be reviewed against the criteria below when work is requested. Later authentication and Windows deployment topics have acceptance criteria but no authorization to implement them. Their task IDs and sequence will be assigned separately.
 
 | Task | Acceptance criteria |
 | --- | --- |
