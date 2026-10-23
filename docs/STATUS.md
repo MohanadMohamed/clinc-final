@@ -1,33 +1,31 @@
 # Project status
 
-Updated: 2026-10-23. **Sprint 0 Task 0A: COMPLETE — documentation scope only. Next task: 0B.**
+Updated: 2026-10-23. **Sprint 0 Task 0B: COMPLETE — Ubuntu development scaffold. Next task: 1A.**
 
-The [confirmed product baseline](requirements/BASELINE.md) remains authoritative: original Arabic RTL single-doctor Neurology & Psychiatry clinic, two Windows PCs, pywebview clients, FastAPI/PostgreSQL Windows services on the doctor PC, one central database, LAN HTTPS and no Internet required during normal operation. Independent accounts and API-enforced role/field permissions protect clinical notes. All development data is synthetic. Ubuntu development does not establish Windows acceptance.
+[Product baseline](requirements/BASELINE.md): Arabic RTL single-doctor clinic; two Windows PCs, pywebview clients, FastAPI/PostgreSQL services on the doctor PC, central database, LAN HTTPS, no Internet needed for normal operation. Ubuntu checks do not establish Windows or clinical readiness.
 
-## This checkpoint
+- **0A:** Documentation/workflow evidence checkpoint `6154589`; [report](tasks/0A.md).
+- **0B:** Existing partial scaffold completed and checkpointed; [report](tasks/0B.md), [exact Ubuntu commands](../README.md). No authentication or patient features.
 
-Updated the five requested documents: [AGENTS](../AGENTS.md), [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md), this status and [0A report](tasks/0A.md). The report contains verified registration, appointment, visit and billing source behavior at pinned commit `99638225ba0876261c2c16c3bd2f9b83f4abbc19`, distinguished from inferences and original clinic proposals.
+## Current evidence
 
-Git already existed. The pre-existing untracked `.env.example`, `.gitignore`, `backend/`, `compose.yaml` and `frontend/` partial 0B work is preserved and excluded from this documentation commit. No application code or database was changed in this task. Prior [baseline review](tasks/baseline-review.md) remains historical context.
-
-## Verification
-
-| Check | Result / evidence |
+| Check | Result |
 | --- | --- |
-| Local Markdown links and fenced blocks | PASS: first Python block in the 0A report checks 8 documents and all local links |
-| Public workflow source targets | PASS: second Python block fetched 4 commit-pinned files with HTTP 200; all 14 line references valid |
-| Source interpretation | PASS: relevant executable methods inspected; limits and proposed clinic behavior labelled separately in 0A |
-| Documentation whitespace and staged scope | PASS: `git diff --check`, `git diff --cached --check`, `git diff --cached --name-only`; only the 5 requested Markdown files staged |
-| Preserved scaffold | PASS: SHA-256 comparison against prior review manifest for 34 source/config/lock files; no implementation changes |
-| Reference application/runtime workflows | NOT TESTED: source inspection only |
-| Application, browser, migrations, Windows, LAN HTTPS and backup/restore | NOT TESTED in this documentation task; earlier smoke results are not current deployment evidence |
+| Backend pytest | PASS: 2 tests, readiness success/failure and sanitized errors |
+| Ruff lint and formatting | PASS: 16 Python files |
+| Disposable PostgreSQL 18.6 migration baseline | PASS: upgrade/current/check/downgrade/upgrade, only Alembic version table, no drift |
+| Real Vite → FastAPI → DB HTTP integration | PASS: both health endpoints through proxy, Arabic HTML shell, temporary services cleaned up |
+| Locked frontend install, TypeScript, production build | PASS: `npm ci`, `npm run typecheck`, `npm run build` |
+| Vitest/Testing Library | PASS: 2 component tests |
+| Production dependency audit | PASS: no reported vulnerabilities; not a security certification |
+| Documentation/ignore rules/Git whitespace | PASS: commands in 0B report |
+| Browser/Playwright, Compose, persistent DB provisioning | NOT TESTED |
+| Windows packages, pywebview, services, LAN TLS, printing, backup/restore | NOT TESTED |
 
-Exact reproduction/checkpoint commands are in the 0A report. Original GitHub HTML HEAD checks timed out in the earlier task; the current raw-source checks succeeded. Technical verification does not establish clinical compliance or readiness.
+Warnings: Starlette HTTPX TestClient deprecation and transitive whatwg-encoding deprecation; tests pass without suppressing warnings. See report for limits and exact commands.
 
-## Open architecture decisions
+## Remaining decisions
 
-Runtime pins and reproducibility remain 0B acceptance work. Authentication library/settings and session durations, Windows installer/service wrapper, webview runtime provisioning, TLS hostname/trust/renewal, backup recovery objectives/key custody, clinic timezone/currency and retention/correction/export policy remain open with owners/deadlines in ADR-001. These do not block the 0A documentation deliverables; they gate later implementation and deployment.
+[ADR-001](architecture/ADR-001.md) records the tested development toolchain and open authentication settings, Windows installer/service wrapper, certificate lifecycle, webview provisioning, backup objectives, timezone/currency and clinic policies. Windows packages must be built/tested on Windows. Technical tests do not establish clinical compliance or readiness.
 
-## Next task
-
-**0B — Local development scaffold.** Review the preserved partial work, resolve its outstanding acceptance criteria and document exact Ubuntu setup/run/check commands. Require actual UI/API/database integration evidence and migration checks on a disposable synthetic database. Do not add authentication, patients, appointments, visits or billing features as part of the scaffold. Work resumes only when requested; this task ends at the documentation checkpoint.
+**Next task: 1A**, when explicitly requested and scoped. No next-task implementation is included.

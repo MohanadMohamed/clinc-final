@@ -1,0 +1,14 @@
+# Optional development database only; never required on the clinic PCs.
+services:
+  db:
+    image: postgres:18.1
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set a synthetic development database}
+      POSTGRES_USER: ${POSTGRES_USER:?Set a local migration role}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Generate an untracked development password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - clinic_dev:/var/lib/postgresql
+volumes:
+  clinic_dev:

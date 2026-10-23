@@ -90,7 +90,7 @@ List counts, search hints, receipt templates, print routes, logs, error messages
 
 ## Next tasks: acceptance criteria, not implementation authorization
 
-**Current authorization: Sprint 0 Task 0A only. Next task: 0B.** An existing partial 0B scaffold is preserved outside this documentation task and must be reviewed against the criteria below when work is requested. Later authentication and Windows deployment topics have acceptance criteria but no authorization to implement them. Their task IDs and sequence will be assigned separately.
+**Task 0B is complete for the Ubuntu scaffold scope. Next task: 1A**, only when requested and scoped. See the [0B evidence](../tasks/0B.md). The table records acceptance criteria; future foundation topics do not authorize implementation.
 
 | Task | Acceptance criteria |
 | --- | --- |
