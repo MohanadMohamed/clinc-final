@@ -295,3 +295,72 @@ def test_login_body_is_bounded_without_echo(auth):
     )
     assert response.status_code == 413
     assert response.json() == {"detail": "Request too large"}
+
+
+def test_patient_administration_roles_validation_and_archive(auth):
+    client, password, factory, _ = auth
+    assert client.get("/api/patients").status_code == 401
+    assert login(client, password, "synthetic.reception").status_code == 200
+    token(client)
+    bad = {"full_name": "", "phone": "12345"}
+    assert client.post("/api/patients", json=bad).status_code == 422
+    data = {"full_name": "Synthetic Patient", "phone": "+201001234567"}
+    created = client.post("/api/patients", json=data)
+    assert created.status_code == 201
+    patient_id = created.json()["id"]
+    assert set(created.json()) == {
+        "id",
+        "full_name",
+        "phone",
+        "birth_date",
+        "active",
+        "created_at",
+        "updated_at",
+        "archived_at",
+    }
+    assert client.post("/api/patients", json=data).status_code == 400
+    confirmed = client.post("/api/patients", json={**data, "confirm_duplicate": True})
+    assert confirmed.status_code == 201
+    assert confirmed.json()["id"] != patient_id
+    assert (
+        client.get(
+            "/api/patients", params={"search": "Synthetic", "page_size": 1}
+        ).json()["total"]
+        == 2
+    )
+    assert (
+        client.get("/api/patients/00000000-0000-0000-0000-000000000000").status_code
+        == 404
+    )
+    assert (
+        client.patch(
+            f"/api/patients/{patient_id}", json={"diagnosis": "forbidden"}
+        ).status_code
+        == 422
+    )
+    assert client.patch(f"/api/patients/{patient_id}", json={}).status_code == 422
+    assert (
+        client.patch(
+            f"/api/patients/{patient_id}", json={"full_name": "Updated Synthetic"}
+        ).status_code
+        == 200
+    )
+    assert client.post(f"/api/patients/{patient_id}/archive").status_code == 200
+    assert client.post(f"/api/patients/{patient_id}/archive").status_code == 400
+    assert (
+        client.patch(
+            f"/api/patients/{patient_id}", json={"phone": "1234567"}
+        ).status_code
+        == 400
+    )
+    assert client.get(f"/api/patients/{patient_id}").json()["active"] is False
+    assert client.get("/api/patients").json()["total"] == 1
+    from app.models.patient import PatientAudit
+
+    with factory() as db:
+        events = db.scalars(
+            select(PatientAudit.event).where(PatientAudit.patient_id == patient_id)
+        ).all()
+        assert events == ["created", "updated", "archived"]
+    assert login(client, password).status_code == 200
+    assert client.get(f"/api/patients/{patient_id}").status_code == 200
