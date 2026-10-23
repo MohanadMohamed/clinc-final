@@ -1,31 +1,29 @@
 # Project status
 
-Updated: 2026-10-23. **Sprint 0 Task 0B: COMPLETE — Ubuntu development scaffold. Next task: 1A.**
+Updated: 2026-10-23. **Sprint 1 Task 1A: backend authentication implemented. Next task: 1B.**
 
-[Product baseline](requirements/BASELINE.md): Arabic RTL single-doctor clinic; two Windows PCs, pywebview clients, FastAPI/PostgreSQL services on the doctor PC, central database, LAN HTTPS, no Internet needed for normal operation. Ubuntu checks do not establish Windows or clinical readiness.
+[1A report](tasks/1A.md) documents sessions, CSRF, roles, audit, throttling, local bootstrap, exact commands and limits. [Baseline](requirements/BASELINE.md) and [ADR-001](architecture/ADR-001.md) remain authoritative. Frontend unchanged; no patient functionality.
 
-- **0A:** Documentation/workflow evidence checkpoint `6154589`; [report](tasks/0A.md).
-- **0B:** Existing partial scaffold completed and checkpointed; [report](tasks/0B.md), [exact Ubuntu commands](../README.md). No authentication or patient features.
+## Evidence
 
-## Current evidence
+Commands below ran from `backend/` on Ubuntu on 2026-10-23:
 
-| Check | Result |
-| --- | --- |
-| Backend pytest | PASS: 2 tests, readiness success/failure and sanitized errors |
-| Ruff lint and formatting | PASS: 16 Python files |
-| Disposable PostgreSQL 18.6 migration baseline | PASS: upgrade/current/check/downgrade/upgrade, only Alembic version table, no drift |
-| Real Vite → FastAPI → DB HTTP integration | PASS: both health endpoints through proxy, Arabic HTML shell, temporary services cleaned up |
-| Locked frontend install, TypeScript, production build | PASS: `npm ci`, `npm run typecheck`, `npm run build` |
-| Vitest/Testing Library | PASS: 2 component tests |
-| Production dependency audit | PASS: no reported vulnerabilities; not a security certification |
-| Documentation/ignore rules/Git whitespace | PASS: commands in 0B report |
-| Browser/Playwright, Compose, persistent DB provisioning | NOT TESTED |
-| Windows packages, pywebview, services, LAN TLS, printing, backup/restore | NOT TESTED |
+| Result | Command/check | Evidence |
+| --- | --- | --- |
+| PASS | `.venv/bin/pytest -q` | 16 passed in 13.60s; one known Starlette TestClient deprecation warning. |
+| PASS | Disposable PostgreSQL migrations, executed by pytest fixture | `alembic upgrade head`, `alembic check`, `alembic downgrade 0001_baseline`, `alembic upgrade head`, `alembic check`; no schema drift. No existing database used. |
+| PASS | `.venv/bin/ruff check .` | All checks passed. |
+| PASS | `.venv/bin/ruff format --check .` | 24 files already formatted. |
+| PASS | `.venv/bin/python -m pip check` | No broken requirements found. |
+| PASS | Local Markdown link validation; `git diff --check`; `git diff --name-only -- frontend` (repository root) | All 51 local links across 10 documents resolve; no whitespace errors; no frontend changes. |
+| NOT TESTED | Real browser, pywebview, Windows, TLS certificates and manual interactive bootstrap UX | Outside this Ubuntu backend run; bootstrap transaction and noninteractive rejection were tested. |
 
-Warnings: Starlette HTTPX TestClient deprecation and transitive whatwg-encoding deprecation; tests pass without suppressing warnings. See report for limits and exact commands.
+Tests cover unauthenticated 401, wrong-role 403, logout replay, session rotation/expiry, disabled accounts, CSRF/Origin checks, account/IP/concurrent throttling, rejected role injection, fixed database roles, one-time bootstrap and bounded login bodies. Checkpoint: `feat: add backend session authentication for Task 1A`.
 
-## Remaining decisions
+## Scope and risks
 
-[ADR-001](architecture/ADR-001.md) records the tested development toolchain and open authentication settings, Windows installer/service wrapper, certificate lifecycle, webview provisioning, backup objectives, timezone/currency and clinic policies. Windows packages must be built/tested on Windows. Technical tests do not establish clinical compliance or readiness.
+Public endpoints are health and the CSRF/login handshake. Protected routes use `require_user` / `require_role` and server-authoritative user roles. Receptionist accounts cannot pass doctor-only dependencies; test-only routes verify this without adding clinical features. No public registration or role editing endpoint exists.
 
-**Next task: 1A**, when explicitly requested and scoped. No next-task implementation is included.
+TLS cookies are always Secure. The untouched HTTP development frontend cannot yet perform login; browser integration belongs to later scope. Windows, browser/pywebview, real TLS and manual terminal-bootstrap interaction are NOT TESTED. Session/throttle cleanup and audit-retention policy remain operational work. Account throttling can temporarily deny legitimate login under attack. Starlette's HTTPX TestClient deprecation warning remains. Technical checks do not establish clinical readiness or compliance.
+
+**Next task: 1B**, only when requested. Prior [0A](tasks/0A.md) and [0B](tasks/0B.md) reports remain historical evidence.

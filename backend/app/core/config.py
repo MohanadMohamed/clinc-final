@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,3 +13,23 @@ class Settings(BaseSettings):
     )
     database_url: SecretStr
     migration_database_url: SecretStr | None = None
+
+    public_origin: str = "https://clinic.local"
+
+    @field_validator("public_origin")
+    @classmethod
+    def validate_origin(cls, value):
+        from urllib.parse import urlsplit
+
+        url = urlsplit(value)
+        if (
+            url.scheme != "https"
+            or not url.hostname
+            or url.username
+            or url.password
+            or url.path
+            or url.query
+            or url.fragment
+        ):
+            raise ValueError("A bare HTTPS origin is required")
+        return value

@@ -112,3 +112,7 @@ Liveness is `200 {"status":"ok"}` even if PostgreSQL is unavailable. Readiness e
 The doctor Windows PC will host FastAPI and PostgreSQL as services plus the pywebview doctor client; reception has the thin desktop client only. Docker and Node development servers are not final-runtime requirements. Built React assets are local; normal clinic operation must not depend on Internet services. Production static serving, TLS/service management and desktop packaging belong to later tasks. Build/test PyInstaller and installer packages on Windows, not Ubuntu.
 
 Vitest/Testing Library component tests are not browser acceptance. Playwright is installed for later browser tests; no browser or Windows packaging check is claimed by this task. Technical results do not establish clinical compliance or readiness. See [0B report](docs/tasks/0B.md) and [STATUS](docs/STATUS.md). **Next task: 1A**, only when requested.
+
+## Task 1A backend authentication
+
+Server-side login/logout/session and `/api/me` are now available. See [1A contract, bootstrap and secrets](docs/tasks/1A.md) for the CSRF handshake, mandatory HTTPS cookies, local one-time doctor creation and least-privilege DB grants. No public registration or frontend login UI exists. Apply `alembic upgrade head` before using auth. Backend `pytest -q` now starts its own disposable PostgreSQL fixture, requiring local PostgreSQL binaries and no existing database credentials. The current next task is **1B**, superseding the scaffold-only handoff above.

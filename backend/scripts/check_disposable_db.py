@@ -80,7 +80,14 @@ def main():
                 subprocess.run([alembic, *args], check=True, env=env)
             engine = build_engine(url)
             try:
-                assert inspect(engine).get_table_names() == ["alembic_version"]
+                assert set(inspect(engine).get_table_names()) == {
+                    "alembic_version",
+                    "users",
+                    "login_sessions",
+                    "auth_throttles",
+                    "auth_audit",
+                    "auth_bootstrap",
+                }
             finally:
                 engine.dispose()
             with TestClient(
@@ -89,7 +96,7 @@ def main():
                 assert client.get("/api/health").status_code == 200
                 assert client.get("/api/health/ready").json() == {"status": "ready"}
             check_web(env, root / "web.log")
-            print("PASS: baseline round-trip, no business tables, real DB readiness")
+            print("PASS: baseline round-trip, auth tables only, real DB readiness")
         finally:
             subprocess.run(ctl + ["-m", "fast", "-w", "stop"], check=True)
 

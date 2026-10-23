@@ -7,3 +7,4 @@ alembic
 httpx
 pytest
 ruff
+argon2-cffi
