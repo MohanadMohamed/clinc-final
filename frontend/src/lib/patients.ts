@@ -6,7 +6,12 @@ export type Patient = z.infer<typeof patientSchema>
 export const patientPage = z.object({ items: z.array(patientSchema), total: z.number(), page: z.number(), page_size: z.number() })
 export type PatientInput = { full_name: string; phone: string; birth_date: string | null; confirm_duplicate?: boolean }
 async function read<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, { credentials: "same-origin", ...init })
+  let response: Response
+  try {
+    response = await fetch(path, { credentials: "same-origin", ...init })
+  } catch {
+    throw new Error("تعذر الاتصال بالخادم. حاول مرة أخرى")
+  }
   if (!response.ok) {
     if (response.status === 401) throw new Error("انتهت الجلسة. سجّل الدخول مرة أخرى")
     if (response.status === 400) throw new Error("قد يكون المريض مسجلاً بالفعل، أو لم يعد بالإمكان تعديل السجل")
