@@ -1,0 +1,9 @@
+# Complete TCP policy example; substitute actual local database/role names.
+# First match wins: remove/reconcile any earlier broad rules before deployment.
+host clinic clinic_app      127.0.0.1/32 scram-sha-256
+host clinic clinic_app      ::1/128      scram-sha-256
+host clinic clinic_migrator 127.0.0.1/32 scram-sha-256
+host clinic clinic_migrator ::1/128      scram-sha-256
+# Local operator administration requires a separately reviewed loopback rule.
+host all all 0.0.0.0/0 reject
+host all all ::/0      reject

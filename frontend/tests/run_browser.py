@@ -11,13 +11,14 @@ from urllib.request import urlopen
 
 ROOT=Path(__file__).resolve().parents[2]
 PG=Path('/usr/lib/postgresql/18/bin')
-static_only = sys.argv[1:] == ['--static-only']
+tls_only = sys.argv[1:] == ['--tls-only']
+static_only = tls_only or sys.argv[1:] == ['--static-only']
 if static_only and not (ROOT/'frontend/dist/index.html').is_file():
     raise RuntimeError('Run cd frontend && npm run build before --static-only')
 with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
     root=Path(tmp)
     cert,key=root/'cert.pem',root/'key.pem'
-    subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-keyout',str(key),'-out',str(cert),'-days','1','-subj','/CN=localhost'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-keyout',str(key),'-out',str(cert),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     subprocess.run([str(PG/'initdb'),'-D',str(root/'db'),'-A','trust','--no-locale','-E','UTF8'],check=True,stdout=subprocess.DEVNULL)
     ctl=[str(PG/'pg_ctl'),'-D',str(root/'db')]
     subprocess.run(ctl+['-l',str(root/'pg.log'),'-o',f"-h '' -k {tmp} -p 55442",'-w','start'],check=True,stdout=subprocess.DEVNULL)
@@ -36,15 +37,16 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
         for _ in range(80):
             try:
                 import ssl
-                urlopen(origin + ('/app/' if static_only else '/'),context=ssl._create_unverified_context(),timeout=1).close()
+                urlopen(origin + ('/app/' if static_only else '/'),context=ssl.create_default_context(cafile=str(cert)),timeout=1).close()
                 break
             except Exception: time.sleep(.25)
         else: raise RuntimeError('HTTPS test servers failed to start')
         # The full flow reaches the per-account login throttle; isolated QA uses
         # its own disposable cluster rather than weakening production limits.
-        scripts = ['static.mjs'] if static_only else ['qa.mjs'] if sys.argv[1:] == ['--qa-only'] else ['billing.mjs'] if sys.argv[1:] == ['--billing-only'] else ['browser.mjs', 'appointments.mjs', 'visits.mjs', 'billing.mjs']
+        scripts = ['tls_probe.py'] if tls_only else ['static.mjs'] if static_only else ['qa.mjs'] if sys.argv[1:] == ['--qa-only'] else ['billing.mjs'] if sys.argv[1:] == ['--billing-only'] else ['browser.mjs', 'appointments.mjs', 'visits.mjs', 'billing.mjs']
         for script in scripts:
-            subprocess.run(['node',f'tests/{script}'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
+            runner = str(ROOT/'backend/.venv/bin/python') if script.endswith('.py') else 'node'
+            subprocess.run([runner,f'tests/{script}'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
         if len(scripts) > 1:
             servers[0].terminate()
             servers[0].wait(timeout=5)

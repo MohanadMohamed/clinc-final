@@ -1,0 +1,11 @@
+# Substitute hostname, then generate a NEW key locally; never distribute CA key.
+[req]
+prompt = no
+distinguished_name = subject
+req_extensions = extensions
+[subject]
+CN = doctor.clinic.home.arpa
+[extensions]
+subjectAltName = DNS:doctor.clinic.home.arpa
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth

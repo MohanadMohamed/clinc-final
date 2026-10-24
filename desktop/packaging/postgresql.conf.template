@@ -1,0 +1,8 @@
+# Review effective configuration, includes and postgresql.auto.conf before applying.
+# Restart required. Do not append after conflicting settings without review.
+listen_addresses = '127.0.0.1,::1'
+port = 5432
+password_encryption = 'scram-sha-256'
+log_statement = 'none'
+log_parameter_max_length = 0
+log_parameter_max_length_on_error = 0

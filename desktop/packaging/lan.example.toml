@@ -1,0 +1,9 @@
+# Non-secret illustrative values. Reserve both addresses before deployment.
+hostname = "doctor.clinic.home.arpa"
+listen_address = "192.168.50.10"
+https_port = 8443
+reception_addresses = ["192.168.50.11"]
+public_origin = "https://doctor.clinic.home.arpa:8443"
+postgres_listen_addresses = "127.0.0.1,::1"
+certificate = 'C:\ProgramData\Clinic\tls\server-chain.pem'
+private_key = 'C:\ProgramData\Clinic\tls\server-key.pem'

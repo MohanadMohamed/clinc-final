@@ -1,6 +1,8 @@
 # Project status
 
-Updated: 2026-10-24. **Sprint 7 Task 7A technical desktop prototype verified on Ubuntu; next task 7B.**
+Updated: 2026-10-24. **Sprint 7 Task 7B LAN/TLS design and safe local prototypes complete; next task 8A.**
+
+[Task 7B report](tasks/7B.md) records the deployment design, Windows review templates, verified local HTTPS/session checks and offline-write replay prevention. Windows-specific acceptance remains **NOT TESTED**. No real/development records or machine network settings changed.
 
 [Task 7A report](tasks/7A.md) records the FastAPI `/app/` static route, local `/docs`, thin pywebview launcher, exact commands and test evidence. The built React app passed real Chrome tests without Vite and with disposable PostgreSQL. An actual pywebview window was **NOT TESTED** because pywebview is not installed; Windows packaging and LAN deployment are **NOT TESTED**. The pre-existing 6A audit changes remain uncommitted outside the 7A checkpoint.
 
