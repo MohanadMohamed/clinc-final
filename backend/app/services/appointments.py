@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.models.appointment import Appointment, AppointmentAudit
@@ -33,6 +33,12 @@ def validate_slot(slot, kind, policy):
         or local_end.time() <= local_start.time()
     ):
         raise HTTPException(400, "Slot outside Cairo working hours")
+
+
+def schedule_lock(db):
+    # One doctor has one calendar. Serialize writes before taking row locks;
+    # GiST exclusion remains the database's final overlap guard for every writer.
+    db.execute(text("SELECT pg_advisory_xact_lock(170002)"))
 
 
 def patient_lock(db, patient_id, require_active=True):

@@ -1,6 +1,8 @@
 # Project status
 
-Updated: 2026-10-24. **Sprint 5 Task 5B: billing frontend implemented. Next task: 6A.**
+Updated: 2026-10-24. **Focused appointment deadlock fix verified; Task 6A audit remains in progress.**
+
+[Deadlock fix report](tasks/appointment-deadlock-fix.md): one transaction lock now orders all one-doctor calendar writes before row locks. The raw PostgreSQL race still verifies that overlapping writes cannot both commit. Appointment suite: 14 passed; full backend suite: 40 passed on disposable PostgreSQL. The pending Task 6A audit changes are separate from this checkpoint. Next task ID: **6A** (resume audit only when requested).
 
 [Task 5B report](tasks/5B.md) records the Arabic invoice, cash payment, receipt and daily summary UI. [Task 5A](tasks/5A.md) describes the authoritative billing service and accounting rules. [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md) and [baseline](requirements/BASELINE.md) remain product constraints.
 

@@ -23,6 +23,7 @@ Actor = Annotated[User, Depends(require_role("doctor", "receptionist"))]
 
 @router.post("", response_model=AppointmentOut, status_code=201)
 def create(data: AppointmentCreate, request: Request, db: DB, actor: Actor):
+    service.schedule_lock(db)
     service.patient_lock(db, data.patient_id)
     service.validate_slot(
         data, data.kind, request.app.state.settings.appointment_policy
@@ -51,6 +52,7 @@ def list_appointments(
 
 @router.post("/{appointment_id}/cancel", response_model=AppointmentOut)
 def cancel(appointment_id: UUID, db: DB, actor: Actor):
+    service.schedule_lock(db)
     appt = service.appointment_lock(db, appointment_id, require_active=False)
     old = appt.start_at, appt.end_at
     appt.status, appt.updated_at = "cancelled", now()
@@ -61,6 +63,7 @@ def cancel(appointment_id: UUID, db: DB, actor: Actor):
 def reschedule(
     appointment_id: UUID, data: Slot, request: Request, db: DB, actor: Actor
 ):
+    service.schedule_lock(db)
     appt = service.appointment_lock(db, appointment_id)
     service.validate_slot(
         data, appt.kind, request.app.state.settings.appointment_policy

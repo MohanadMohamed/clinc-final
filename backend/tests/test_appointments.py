@@ -7,7 +7,7 @@ import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from test_auth import login, token
 
 from app.core.scheduling import SchedulingPolicy
@@ -230,14 +230,19 @@ def test_database_exclusion_under_true_concurrency(auth_db, operation):
             try:
                 db.commit()
                 return connection_pid, "committed"
-            except IntegrityError as error:
+            except (IntegrityError, OperationalError) as error:
                 db.rollback()
                 return connection_pid, error.orig.sqlstate
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         results = list(executor.map(book, range(2)))
     assert len({r[0] for r in results}) == 2
-    assert sorted(r[1] for r in results) == ["23P01", "committed"]
+    # A raw writer bypasses the API lock. PostgreSQL can reject that transaction
+    # with exclusion (23P01) or a deadlock (40P01); neither may double-book.
+    assert sorted(r[1] for r in results) in (
+        ["23P01", "committed"],
+        ["40P01", "committed"],
+    )
     with auth_db() as db:
         rows = db.scalars(
             select(Appointment).where(
@@ -245,6 +250,59 @@ def test_database_exclusion_under_true_concurrency(auth_db, operation):
             )
         ).all()
         assert len(rows) == 1
+
+
+@pytest.mark.parametrize("attempt", range(5))
+def test_schedule_lock_serializes_different_patient_reschedules(auth_db, attempt):
+    ids = [uuid4(), uuid4()]
+    with auth_db() as db:
+        patients = [
+            Patient(full_name=f"Synthetic Lock {i}", phone=f"1234567{i}")
+            for i in range(2)
+        ]
+        db.add_all(patients)
+        db.flush()
+        for i, aid in enumerate(ids):
+            db.add(
+                Appointment(
+                    id=aid,
+                    patient_id=patients[i].id,
+                    kind="first_visit",
+                    **Slot(**future_slot(12 + i)).model_dump(),
+                )
+            )
+        db.commit()
+    barrier = Barrier(2)
+
+    def reschedule(i):
+        with auth_db() as db:
+            pid = db.scalar(text("SELECT pg_backend_pid()"))
+            barrier.wait(timeout=10)
+            try:
+                service.schedule_lock(db)  # Same first lock as the production API.
+                appt = db.get(Appointment, ids[i], with_for_update=True)
+                slot = Slot(**future_slot())
+                appt.start_at, appt.end_at = slot.start_at, slot.end_at
+                db.commit()
+                return pid, "committed"
+            except (IntegrityError, OperationalError) as error:
+                db.rollback()
+                return pid, error.orig.sqlstate
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(reschedule, range(2)))
+    assert len({pid for pid, _ in results}) == 2
+    assert sorted(result for _, result in results) == ["23P01", "committed"]
+    with auth_db() as db:
+        rows = db.scalars(
+            select(Appointment).where(
+                Appointment.start_at == Slot(**future_slot()).start_at
+            )
+        ).all()
+        assert len(rows) == 1
+        other = db.scalar(select(Appointment).where(Appointment.id != rows[0].id))
+        original = Slot(**future_slot(12 + ids.index(other.id)))
+        assert (other.start_at, other.end_at) == (original.start_at, original.end_at)
 
 
 def test_cairo_dst_and_hours(monkeypatch):

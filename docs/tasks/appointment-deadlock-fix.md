@@ -1,0 +1,15 @@
+# Focused appointment deadlock fix — 2026-10-24
+
+A disposable PostgreSQL full-suite run reproduced SQLSTATE `40P01` in `test_database_exclusion_under_true_concurrency[reschedule]`. Two independent transactions updated different existing appointment rows into the same half-open interval. PostgreSQL's GiST exclusion check can wait on each transaction's old/new index tuples and form a cycle. The raw ORM test did not take the API's patient lock; that lock also cannot serialize bookings for different patients.
+
+The single-doctor API now takes a transaction-scoped advisory lock (`170002`) **before** any patient or appointment row lock in create, cancel and reschedule. This gives all application calendar writes one lock order and serializes them until commit. The exclusion constraint stays in place as the final database guard. No retry or SQLSTATE suppression was added to production. Direct writers that bypass the API lock may still receive either exclusion `23P01` or deadlock `40P01`; the raw test now recognizes both as a rejected transaction and still proves exactly one appointment occupies the target slot. A new two-session, two-patient test repeats the application lock race five times, requires one commit and one exclusion rejection, and verifies the losing appointment retains its complete original interval.
+
+| Result | Exact command | Evidence |
+| --- | --- | --- |
+| PASS | `cd backend && .venv/bin/pytest -q tests/test_appointments.py -k 'database_exclusion_under_true_concurrency or schedule_lock_serializes'` | 3 passed, 7 deselected before repetition was added. |
+| PASS | `cd backend && .venv/bin/pytest -q tests/test_appointments.py` | 14 passed, including five separate two-session reschedule attempts on disposable PostgreSQL. |
+| PASS | `cd backend && .venv/bin/pytest -q` | 40 passed, 1 pre-existing Starlette TestClient deprecation warning; migrations run on a private disposable cluster. |
+| PASS | `backend/.venv/bin/ruff check backend/app/api/appointments.py backend/app/services/appointments.py backend/tests/test_appointments.py` and `backend/.venv/bin/ruff format --check backend/app/api/appointments.py backend/app/services/appointments.py backend/tests/test_appointments.py` | All changed appointment files passed. |
+| NOT TESTED | Long-duration load/Windows runtime | No Windows services or clinic data were used. |
+
+Changed files: `backend/app/api/appointments.py`, `backend/app/services/appointments.py`, `backend/tests/test_appointments.py`, this report and `docs/STATUS.md`. The pending Task 6A security-audit edits and pre-existing `AGENTS.md` edit are separate and remain untouched by this checkpoint. Tradeoff: all one-doctor calendar writes now serialize, which is acceptable for the current clinic model but should be measured if scale changes. A client writing directly to PostgreSQL can still see `40P01`; direct database writing is not an authorized workflow. Next task ID: **6A** (resume the unfinished audit when requested); do not begin 6B here.
