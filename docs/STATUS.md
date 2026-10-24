@@ -1,6 +1,8 @@
 # Project status
 
-Updated: 2026-10-24. **Sprint 7 Task 7B LAN/TLS design and safe local prototypes complete; next task 8A.**
+Updated: 2026-10-24. **Ubuntu loopback development fix complete; no new sprint started. Next planned task remains 8A.**
+
+[Local development fix](tasks/local-development-fix.md) adds explicit HTTP loopback mode, a local startup script, safe example configuration, and real disposable-DB/browser verification. The existing local doctor bootstrap marker and account were checked read-only; no credentials or records were displayed or changed. Production HTTPS defaults remain. Pre-existing 6A working-tree edits remain separate.
 
 [Task 7B report](tasks/7B.md) records the deployment design, Windows review templates, verified local HTTPS/session checks and offline-write replay prevention. Windows-specific acceptance remains **NOT TESTED**. No real/development records or machine network settings changed.
 

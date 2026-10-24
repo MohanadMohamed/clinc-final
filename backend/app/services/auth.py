@@ -12,6 +12,11 @@ from app.models.auth import Audit, LoginSession, Throttle
 HASHER = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
 DUMMY_HASH = HASHER.hash(secrets.token_urlsafe(32))
 COOKIE = "__Host-clinic_session"
+DEV_COOKIE = "clinic_dev_session"
+
+
+def cookie_name(settings):
+    return DEV_COOKIE if settings.loopback_http else COOKIE
 
 
 def now():
@@ -82,7 +87,7 @@ def load_session(db, token):
     return session
 
 
-def issue(db, response, user_id=None):
+def issue(db, response, user_id=None, *, settings=None):
     token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     seconds = 8 * 3600 if user_id else 300
     db.add(
@@ -95,10 +100,10 @@ def issue(db, response, user_id=None):
         )
     )
     response.set_cookie(
-        COOKIE,
+        cookie_name(settings) if settings else COOKIE,
         token,
         max_age=seconds,
-        secure=True,
+        secure=not settings.loopback_http if settings else True,
         httponly=True,
         samesite="strict",
         path="/",

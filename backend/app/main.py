@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from html import escape
+from ipaddress import ip_address
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -81,6 +82,16 @@ def create_app(
 
     @app.middleware("http")
     async def private_responses(request, call_next):
+        config = request.app.state.settings
+        if config.loopback_http:
+            try:
+                local_client = ip_address(request.client.host).is_loopback
+            except ValueError, AttributeError:
+                local_client = False
+            if not local_client:
+                return JSONResponse(
+                    status_code=403, content={"detail": "Access denied"}
+                )
         response = await call_next(request)
         response.headers["Cache-Control"] = "no-store"
         return response

@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 from app.api.health import get_session
 from app.models.auth import User
 from app.services.auth import (
-    COOKIE,
     DUMMY_HASH,
     HASHER,
     audit,
+    cookie_name,
     deny,
     digest,
     issue,
@@ -65,7 +65,9 @@ def csrf_check(request, db, session):
 
 
 def require_user(request: Request, db: DB):
-    session = load_session(db, request.cookies.get(COOKIE))
+    session = load_session(
+        db, request.cookies.get(cookie_name(request.app.state.settings))
+    )
     user = db.get(User, session.user_id) if session and session.user_id else None
     if not user or not user.active:
         if session:
@@ -96,19 +98,21 @@ def csrf(request: Request, response: Response, db: DB):
     # Origin is required here too, preventing cross-site token churn.
     origin(request, db)
     throttle(db, [("csrf:" + request.client.host, 60)])
-    session = load_session(db, request.cookies.get(COOKIE))
+    settings = request.app.state.settings
+    session = load_session(db, request.cookies.get(cookie_name(settings)))
     if session:
         token = secrets.token_urlsafe(32)
         session.csrf_hash = digest(token)
     else:
-        token = issue(db, response)
+        token = issue(db, response, settings=settings)
     db.commit()
     return {"csrf_token": token}
 
 
 @router.post("/auth/login", response_model=Me)
 def login(data: Login, request: Request, response: Response, db: DB):
-    session = load_session(db, request.cookies.get(COOKIE))
+    settings = request.app.state.settings
+    session = load_session(db, request.cookies.get(cookie_name(settings)))
     csrf_check(request, db, session)
     username = data.username.lower()
     throttle(db, [("account:" + username, 5), ("login-ip:" + request.client.host, 30)])
@@ -122,7 +126,7 @@ def login(data: Login, request: Request, response: Response, db: DB):
         user.password_hash = HASHER.hash(data.password.get_secret_value())
     db.delete(session)
     issue(
-        db, response, user.id
+        db, response, user.id, settings=settings
     )  # Rotate both secrets; obtain new CSRF via GET afterwards.
     audit(db, "login_succeeded", user.id)
     db.commit()
@@ -149,11 +153,16 @@ def logout(
     db: DB,
     user: Annotated[User, Depends(require_user)],
 ):
-    session = load_session(db, request.cookies.get(COOKIE))
+    settings = request.app.state.settings
+    session = load_session(db, request.cookies.get(cookie_name(settings)))
     if session:
         db.delete(session)
     audit(db, "logout", user.id)
     db.commit()
     response.delete_cookie(
-        COOKIE, path="/", secure=True, httponly=True, samesite="strict"
+        cookie_name(settings),
+        path="/",
+        secure=not settings.loopback_http,
+        httponly=True,
+        samesite="strict",
     )

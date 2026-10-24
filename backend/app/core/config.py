@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Literal
+from urllib.parse import urlsplit
 
-from pydantic import SecretStr, field_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.scheduling import SchedulingPolicy
@@ -18,22 +20,34 @@ class Settings(BaseSettings):
 
     appointment_policy: SchedulingPolicy = SchedulingPolicy()
 
+    env: Literal["development", "production"] = "production"
     public_origin: str = "https://clinic.local"
 
-    @field_validator("public_origin")
-    @classmethod
-    def validate_origin(cls, value):
-        from urllib.parse import urlsplit
-
-        url = urlsplit(value)
+    @model_validator(mode="after")
+    def validate_origin(self):
+        url = urlsplit(self.public_origin)
         if (
-            url.scheme != "https"
+            url.scheme not in ("http", "https")
             or not url.hostname
             or url.username
             or url.password
             or url.path
             or url.query
             or url.fragment
+            or not url.netloc
         ):
-            raise ValueError("A bare HTTPS origin is required")
-        return value
+            raise ValueError("A bare public origin is required")
+        try:
+            _ = url.port
+        except ValueError as error:
+            raise ValueError("A valid public origin port is required") from error
+        if url.scheme == "http" and (
+            self.env != "development"
+            or url.hostname not in {"127.0.0.1", "localhost", "::1"}
+        ):
+            raise ValueError("HTTP is allowed only for explicit loopback development")
+        return self
+
+    @property
+    def loopback_http(self) -> bool:
+        return self.env == "development" and self.public_origin.startswith("http://")

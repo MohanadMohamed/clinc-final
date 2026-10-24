@@ -1,5 +1,31 @@
 # Arabic Neurology & Psychiatry clinic — development scaffold
 
+## Current Ubuntu loopback development
+
+PostgreSQL must already be running with the existing migrated **development** database. Keep its credentials in the untracked root `.env` (copy the placeholder-only `.env.example` only when setting up a new environment). From the repository root, after installing dependencies as below:
+
+```bash
+./scripts/dev_local.sh
+```
+
+Open `http://127.0.0.1:5173/login` and sign in with an existing authorized account. The script binds FastAPI to `127.0.0.1:8000` and Vite to `127.0.0.1:5173`; Vite proxies `/api` to FastAPI. It sets `CLINIC_ENV=development` and `CLINIC_PUBLIC_ORIGIN=http://127.0.0.1:5173` for these processes, without changing `.env`, creating accounts, migrating, or resetting data. You may instead run two terminals:
+
+```bash
+cd backend
+CLINIC_ENV=development CLINIC_PUBLIC_ORIGIN=http://127.0.0.1:5173 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --no-access-log --no-proxy-headers
+```
+
+```bash
+cd frontend
+npm run dev -- --host 127.0.0.1
+```
+
+Check `http://127.0.0.1:5173/api/health/ready` for `{"status":"ready"}`. The initial doctor bootstrap marker and a doctor account were confirmed present in the currently configured local database by a read-only existence query; **do not bootstrap it again**. For a *different fresh database* only, after applying its migrations and ensuring no doctor exists, use `cd backend && .venv/bin/python -m app.bootstrap --username YOUR_DOCTOR_USERNAME` in an interactive local terminal with a DB role permitted to insert the initial user. It prompts for a unique password and has no default. Existing account credentials are never reset by startup.
+
+Loopback HTTP is accepted only with explicit `CLINIC_ENV=development` and an exact `127.0.0.1`, `localhost`, or `::1` public origin. The API also rejects non-loopback peers in this mode. Session cookies remain HttpOnly and SameSite Strict, with a distinct HTTP-development cookie name; CSRF and server-side roles remain enforced. Production is the default: `CLINIC_ENV=production` requires a bare HTTPS public origin and retains the Secure `__Host-clinic_session` cookie. Windows LAN deployment still requires trusted HTTPS and separate doctor/receptionist accounts. Never bind the development processes or PostgreSQL to a LAN address.
+
+The old sprint setup notes below are historical; this section is the current Ubuntu startup path. [Local development fix report](docs/tasks/local-development-fix.md) has verification commands and limits.
+
 Current prototype: FastAPI serves a Vite production build at `/app/`; the thin source-run pywebview launcher is described in [desktop/README.md](desktop/README.md). See [Task 7A](docs/tasks/7A.md) and [STATUS](docs/STATUS.md) for current checks and limits. The older sprint instructions below are retained as historical setup notes.
 
 Task 0B supplies system health only. No authentication or patient functionality exists. Fixed architecture: [ADR-001](docs/architecture/ADR-001.md); [product baseline](docs/requirements/BASELINE.md). Use synthetic data only.
