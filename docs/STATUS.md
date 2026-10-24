@@ -1,19 +1,14 @@
 # Project status
 
-Updated: 2026-10-23. **Sprint 3 Task 3A: one-doctor appointment backend implemented. Next task: 3B.**
+Updated: 2026-10-24. **Sprint 3 Task 3B: Arabic appointment frontend verified. Next task: 4A.**
 
-[Task 3A report](tasks/3A.md) records the API contract, GiST exclusion design, Cairo/DST policy, configuration, migration and deployment limits. [2B](tasks/2B.md), [2A](tasks/2A.md) and [1A](tasks/1A.md) retain earlier evidence. [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md) and [baseline](requirements/BASELINE.md) remain the wider constraints; Cairo is now explicitly selected by the Task 3A request.
-
-Commands below ran from `backend/` on Ubuntu:
+[Task 3B report](tasks/3B.md) documents the UI contract and actual browser evidence. [Task 3A](tasks/3A.md) retains backend overlap and authorization evidence; [ADR-001](architecture/ADR-001.md), [MVP](requirements/MVP.md) and [baseline](requirements/BASELINE.md) remain product constraints.
 
 | Result | Command/check | Evidence |
 | --- | --- | --- |
-| PASS | `.venv/bin/pytest -q` | 26 passed in 16.30s; one known Starlette TestClient deprecation warning. Disposable PostgreSQL migration upgrade/check/downgrade/re-upgrade/check included. |
-| PASS | Concurrent database insert and reschedule tests | Two distinct `pg_backend_pid()` connections synchronized at a barrier; exactly one commit and one exclusion violation (`23P01`) in each case. |
-| PASS | `PYTHONTZPATH="" .venv/bin/pytest -q tests/test_appointments.py::test_cairo_dst_and_hours` | 1 passed; pinned tzdata fallback validates skipped/repeated Cairo DST hours. |
-| PASS | `.venv/bin/ruff check .` | All checks passed. |
-| PASS | `.venv/bin/ruff format --check .` | 38 Python files already formatted. |
-| PASS | `.venv/bin/python -m pip check` | No broken requirements found. |
-| NOT TESTED | Persistent database migration, Windows deployment, frontend appointment UI | No live database changed. No frontend changes. |
+| PASS | `cd frontend && npm run build` | TypeScript/Vite production build completed; 2087 modules transformed. |
+| PASS | `cd frontend && npm test` | Vitest: 3 passed. |
+| PASS | `python3 frontend/tests/run_browser.py` | Disposable PostgreSQL and real local HTTPS Chrome: two independent role sessions, reception-to-doctor visibility, one 409 conflict with Arabic UI feedback, refreshed count, reschedule, cancel, anonymous 401, no unexpected browser errors. Existing patient regression and persistence check passed. |
+| NOT TESTED | Windows desktop package, production TLS, real clinic data | Outside this task. |
 
-The development scheduling policy needs clinic review before deployment. The unrelated pre-existing AGENTS.md edit remains uncommitted. No real patient data was used. Technical checks do not establish clinical readiness or compliance. Next task: **3B**, only when requested.
+Frontend changes only; backend authorization and exclusion constraint remain unchanged. The unrelated pre-existing AGENTS.md edit remains uncommitted. Technical checks do not establish clinical readiness or compliance. Next task: **4A**, only when requested.
