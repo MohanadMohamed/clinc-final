@@ -36,6 +36,7 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
         else: raise RuntimeError('HTTPS test servers failed to start')
         subprocess.run(['node','tests/browser.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
         subprocess.run(['node','tests/appointments.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
+        subprocess.run(['node','tests/visits.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
         servers[0].terminate()
         servers[0].wait(timeout=5)
         servers[0]=subprocess.Popen([str(ROOT/'backend/.venv/bin/uvicorn'),'app.main:app','--host','127.0.0.1','--port','8443','--ssl-certfile',str(cert),'--ssl-keyfile',str(key),'--no-access-log','--no-proxy-headers'],cwd=ROOT/'backend',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
