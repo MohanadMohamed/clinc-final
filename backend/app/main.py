@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.appointments import router as appointments_router
 from app.api.auth import router as auth_router
+from app.api.billing import router as billing_router
 from app.api.health import router
 from app.api.patients import router as patients_router
 from app.api.visits import router as visits_router
@@ -49,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.add_middleware(LoginBodyLimit)
     app.include_router(auth_router)
+    app.include_router(billing_router)
     app.include_router(appointments_router)
     app.include_router(patients_router)
     app.include_router(visits_router)

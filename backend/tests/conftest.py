@@ -74,7 +74,9 @@ def auth_db(auth_database):
     with engine.begin() as connection:
         connection.execute(
             text(
-                "TRUNCATE visit_audit, visit_addenda, visit_revisions, visits, "
+                "TRUNCATE billing_audit, payment_reversals, payments, "
+                "invoice_adjustments, invoices, fees, "
+                "visit_audit, visit_addenda, visit_revisions, visits, "
                 "appointment_audit, appointments, "
                 "patient_audit, patients, auth_audit, "
                 "login_sessions, auth_throttles, "
