@@ -16,7 +16,7 @@ from app.api.patients import router as patients_router
 from app.api.visits import router as visits_router
 from app.core.config import Settings
 from app.core.db import build_engine, build_session_factory
-from app.core.request_limits import LoginBodyLimit
+from app.core.request_limits import RequestBodyLimit
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
@@ -96,7 +96,7 @@ def create_app(
         response.headers["Cache-Control"] = "no-store"
         return response
 
-    app.add_middleware(LoginBodyLimit)
+    app.add_middleware(RequestBodyLimit)
     app.include_router(auth_router)
     app.include_router(billing_router)
     app.include_router(appointments_router)

@@ -13,3 +13,13 @@
 - End with a commit or explicit checkpoint and the next task ID. Do not claim unexecuted tests, deployment or reference workflows as verified.
 - Treat public repositories as study references. Review `morluto/rea` for security before optional use; it must never be a runtime dependency. Respect original and third-party licenses; do not blindly copy code or assets.
 - Avoid credentials and medical information in logs, screenshots, fixtures and client storage. Use only synthetic test data where needed. Technical test results do not establish clinical compliance or clinical readiness. Preserve pre-existing edits; do not reset databases, discard work or publish externally without permission.
+## Working Directory and File Safety
+
+- Before editing files, identify the repository root using `git rev-parse --show-toplevel`.
+- Use consistent repository-relative paths.
+- Check the working directory before running frontend or backend commands.
+- Never assume the terminal starts at the repository root.
+- Inspect `git diff` after significant edits.
+- Never overwrite or delete existing work unintentionally.
+- Do not mark a task complete until its required build and tests have actually passed.
+- If a task is interrupted, resume it from the current working tree rather than starting the next task.

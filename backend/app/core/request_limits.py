@@ -1,19 +1,18 @@
-"""Bound login JSON before parsing, including requests with chunked bodies."""
+"""Bound bodies before JSON parsing/auth, including chunked requests."""
 
 from starlette.responses import JSONResponse
 
 
-class LoginBodyLimit:
+class RequestBodyLimit:
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if (
-            scope["type"] != "http"
-            or scope["method"] != "POST"
-            or scope["path"] != "/api/auth/login"
-        ):
+        if scope["type"] != "http":
             return await self.app(scope, receive, send)
+        # 1 MiB accommodates all three 20k-character notes even as escaped JSON.
+        # Count actual bytes, not attacker-controlled Content-Length headers.
+        limit = 8192 if scope["path"].rstrip("/") == "/api/auth/login" else 1048576
         chunks, size = [], 0
         while True:
             message = await receive()
@@ -21,7 +20,7 @@ class LoginBodyLimit:
                 return
             chunk = message.get("body", b"")
             size += len(chunk)
-            if size > 8192:
+            if size > limit:
                 response = JSONResponse(
                     {"detail": "Request too large"},
                     status_code=413,
