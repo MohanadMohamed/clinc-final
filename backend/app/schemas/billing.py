@@ -72,6 +72,17 @@ class PaymentOut(Input):
     occurred_at: datetime
 
 
+class InvoicePage(Input):
+    items: list[InvoiceOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class PaymentRecord(PaymentOut):
+    reversed: bool
+
+
 class DailySummary(Input):
     day: str
     currency: Literal["EGP"] = "EGP"

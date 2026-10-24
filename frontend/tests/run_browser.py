@@ -5,6 +5,7 @@ import secrets
 import subprocess
 import tempfile
 import time
+import sys
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -34,14 +35,15 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
                 break
             except Exception: time.sleep(.25)
         else: raise RuntimeError('HTTPS test servers failed to start')
-        subprocess.run(['node','tests/browser.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
-        subprocess.run(['node','tests/appointments.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
-        subprocess.run(['node','tests/visits.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
+        scripts = ['billing.mjs'] if sys.argv[1:] == ['--billing-only'] else ['browser.mjs', 'appointments.mjs', 'visits.mjs', 'billing.mjs']
+        for script in scripts:
+            subprocess.run(['node',f'tests/{script}'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
         servers[0].terminate()
         servers[0].wait(timeout=5)
         servers[0]=subprocess.Popen([str(ROOT/'backend/.venv/bin/uvicorn'),'app.main:app','--host','127.0.0.1','--port','8443','--ssl-certfile',str(cert),'--ssl-keyfile',str(key),'--no-access-log','--no-proxy-headers'],cwd=ROOT/'backend',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         time.sleep(1)
-        subprocess.run(['node','tests/after_restart.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
+        if scripts != ['billing.mjs']:
+            subprocess.run(['node','tests/after_restart.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
     finally:
         for server in reversed(servers):
             server.terminate()

@@ -19,6 +19,7 @@ pytest_plugins = ["test_auth"]
 def test_invoice_payment_idempotency_adjustment_and_roles(auth):
     client, password, factory, _ = auth
     assert client.get("/api/billing/fees").status_code == 401
+    assert client.get("/api/billing/invoices").status_code == 401
     assert login(client, password).status_code == 200
     token(client)
     assert (
@@ -40,6 +41,11 @@ def test_invoice_payment_idempotency_adjustment_and_roles(auth):
     invoice = client.post("/api/billing/invoices", json=request)
     assert invoice.status_code == 201 and invoice.json()["base_minor"] == 15000
     iid = invoice.json()["id"]
+    page = client.get("/api/billing/invoices?page=1&page_size=5")
+    assert page.status_code == 200
+    assert page.json()["total"] == 1 and page.json()["items"][0]["id"] == iid
+    assert set(page.json()["items"][0]) == set(invoice.json())
+    assert client.get(f"/api/billing/invoices/{iid}/payments").json() == []
     assert client.post("/api/billing/invoices", json=request).json()["id"] == iid
     assert (
         client.post(
@@ -58,6 +64,7 @@ def test_invoice_payment_idempotency_adjustment_and_roles(auth):
     assert login(client, password, "synthetic.reception").status_code == 200
     token(client)
     assert client.get("/api/billing/fees").status_code == 200
+    assert client.get("/api/billing/invoices").json()["total"] == 1
     for path, data in [
         (
             "/api/billing/fees",
@@ -81,6 +88,10 @@ def test_invoice_payment_idempotency_adjustment_and_roles(auth):
     )
     assert pay.status_code == 201
     pid = pay.json()["id"]
+    payment_list = client.get(f"/api/billing/invoices/{iid}/payments")
+    assert payment_list.status_code == 200
+    assert payment_list.json()[0]["id"] == pid
+    assert payment_list.json()[0]["reversed"] is False
     assert (
         client.post(
             f"/api/billing/invoices/{iid}/payments",
@@ -158,6 +169,10 @@ def test_invoice_payment_idempotency_adjustment_and_roles(auth):
     assert (
         reversed_invoice.status_code == 200
         and reversed_invoice.json()["paid_minor"] == 0
+    )
+    assert (
+        client.get(f"/api/billing/invoices/{iid}/payments").json()[0]["reversed"]
+        is True
     )
     summary = client.get(f"/api/billing/summary/{day}").json()
     assert summary["reversed_minor"] == 5000 and summary["net_minor"] == 0
