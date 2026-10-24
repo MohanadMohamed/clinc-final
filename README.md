@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Arabic Neurology & Psychiatry clinic — development scaffold
 
 ## Current Ubuntu loopback development
@@ -144,3 +145,6 @@ Vitest/Testing Library component tests are not browser acceptance. Playwright is
 ## Task 1A backend authentication
 
 Server-side login/logout/session and `/api/me` are now available. See [1A contract, bootstrap and secrets](docs/tasks/1A.md) for the CSRF handshake, mandatory HTTPS cookies, local one-time doctor creation and least-privilege DB grants. No public registration or frontend login UI exists. Apply `alembic upgrade head` before using auth. Backend `pytest -q` now starts its own disposable PostgreSQL fixture, requiring local PostgreSQL binaries and no existing database credentials. The current next task is **1B**, superseding the scaffold-only handoff above.
+=======
+# clinc-final
+>>>>>>> origin/main
