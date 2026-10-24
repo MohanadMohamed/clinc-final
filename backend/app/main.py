@@ -9,6 +9,7 @@ from app.api.appointments import router as appointments_router
 from app.api.auth import router as auth_router
 from app.api.health import router
 from app.api.patients import router as patients_router
+from app.api.visits import router as visits_router
 from app.core.config import Settings
 from app.core.db import build_engine, build_session_factory
 from app.core.request_limits import LoginBodyLimit
@@ -50,6 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(appointments_router)
     app.include_router(patients_router)
+    app.include_router(visits_router)
     app.include_router(router)
     return app
 

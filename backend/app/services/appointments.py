@@ -1,10 +1,12 @@
 from datetime import timedelta
 
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.models.appointment import Appointment, AppointmentAudit
 from app.models.patient import Patient
+from app.models.visit import Visit
 from app.schemas.appointment import CAIRO
 from app.services.auth import now
 
@@ -50,6 +52,8 @@ def appointment_lock(db, appointment_id, require_active=True):
     appt = db.get(
         Appointment, appointment_id, with_for_update=True, populate_existing=True
     )
+    if db.scalar(select(Visit.id).where(Visit.appointment_id == appt.id).limit(1)):
+        raise HTTPException(409, "Appointment already has a clinical visit")
     if appt.status != "scheduled" or appt.start_at <= now():
         raise HTTPException(400, "Only future scheduled appointments may change")
     return appt
