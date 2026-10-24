@@ -9,10 +9,11 @@ const testTls = process.env.CLINIC_TEST_CERT && process.env.CLINIC_TEST_KEY ? {
   key: readFileSync(process.env.CLINIC_TEST_KEY),
 } : undefined
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/app/" : "/",
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   server: { host: "127.0.0.1", port: 5173, strictPort: true, https: testTls,
     proxy: { "/api": { target: testTls ? "https://127.0.0.1:8443" : "http://127.0.0.1:8000", secure: !testTls } } },
   test: { environment: "jsdom", setupFiles: ["./src/test-setup.ts"] },
-})
+}))

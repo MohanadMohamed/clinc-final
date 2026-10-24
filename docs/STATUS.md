@@ -1,6 +1,8 @@
 # Project status
 
-Updated: 2026-10-24. **Sprint 6 Task 6B QA/regression complete; next task 7A.**
+Updated: 2026-10-24. **Sprint 7 Task 7A technical desktop prototype verified on Ubuntu; next task 7B.**
+
+[Task 7A report](tasks/7A.md) records the FastAPI `/app/` static route, local `/docs`, thin pywebview launcher, exact commands and test evidence. The built React app passed real Chrome tests without Vite and with disposable PostgreSQL. An actual pywebview window was **NOT TESTED** because pywebview is not installed; Windows packaging and LAN deployment are **NOT TESTED**. The pre-existing 6A audit changes remain uncommitted outside the 7A checkpoint.
 
 [Task 6B report](tasks/6B.md) records exact commands and evidence. On disposable PostgreSQL, the backend suite passed 41 tests, Vitest passed 6 tests, the frontend production build passed, the existing Playwright flows passed through restart/persistence, and a separate Playwright QA run passed at 1440×900 and 390×844. Separate disposable browser clusters keep the five-attempt account throttle enabled. No real or development records were changed; these checks do not establish clinical or legal readiness.
 

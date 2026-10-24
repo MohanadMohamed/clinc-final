@@ -1,5 +1,7 @@
 # Arabic Neurology & Psychiatry clinic — development scaffold
 
+Current prototype: FastAPI serves a Vite production build at `/app/`; the thin source-run pywebview launcher is described in [desktop/README.md](desktop/README.md). See [Task 7A](docs/tasks/7A.md) and [STATUS](docs/STATUS.md) for current checks and limits. The older sprint instructions below are retained as historical setup notes.
+
 Task 0B supplies system health only. No authentication or patient functionality exists. Fixed architecture: [ADR-001](docs/architecture/ADR-001.md); [product baseline](docs/requirements/BASELINE.md). Use synthetic data only.
 
 ## Ubuntu prerequisites and locked installation
