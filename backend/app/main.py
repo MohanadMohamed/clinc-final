@@ -2,10 +2,11 @@ from contextlib import asynccontextmanager
 from html import escape
 from ipaddress import ip_address
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.appointments import router as appointments_router
@@ -83,17 +84,54 @@ def create_app(
     @app.middleware("http")
     async def private_responses(request, call_next):
         config = request.app.state.settings
+        response = None
         if config.loopback_http:
             try:
                 local_client = ip_address(request.client.host).is_loopback
             except ValueError, AttributeError:
                 local_client = False
             if not local_client:
-                return JSONResponse(
+                response = JSONResponse(
                     status_code=403, content={"detail": "Access denied"}
                 )
-        response = await call_next(request)
+        if config.deployment == "render_demo":
+            expected_host = urlsplit(config.public_origin).netloc.lower()
+            supplied_hosts = [
+                value.decode("latin-1").lower()
+                for name, value in request.scope["headers"]
+                if name.lower() == b"host"
+            ]
+            if supplied_hosts != [expected_host]:
+                response = JSONResponse(
+                    status_code=400, content={"detail": "Invalid host"}
+                )
+            elif request.url.path in {"/docs", "/openapi.json", "/redoc"}:
+                response = JSONResponse(
+                    status_code=404, content={"detail": "Not found"}
+                )
+            elif not config.demo_public_enabled and request.url.path not in {
+                "/api/health",
+                "/api/health/ready",
+            }:
+                response = JSONResponse(
+                    status_code=503, content={"detail": "Demo unavailable"}
+                )
+            elif request.url.path in {"/", "/app"}:
+                response = RedirectResponse("/app/", status_code=302)
+        if response is None:
+            response = await call_next(request)
         response.headers["Cache-Control"] = "no-store"
+        if config.deployment == "render_demo":
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            # CSRF GET needs the same-origin Referer; send the origin, never a path.
+            response.headers["Referrer-Policy"] = "strict-origin"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; script-src 'self'; style-src 'self'; "
+                "img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+                "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
+                "form-action 'self'"
+            )
         return response
 
     app.add_middleware(RequestBodyLimit)

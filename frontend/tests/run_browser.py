@@ -13,7 +13,8 @@ ROOT=Path(__file__).resolve().parents[2]
 PG=Path('/usr/lib/postgresql/18/bin')
 tls_only = sys.argv[1:] == ['--tls-only']
 http_dev_only = sys.argv[1:] == ['--http-dev-only']
-static_only = tls_only or sys.argv[1:] == ['--static-only']
+render_demo_only = sys.argv[1:] == ['--render-demo-only']
+static_only = tls_only or render_demo_only or sys.argv[1:] == ['--static-only']
 if static_only and not (ROOT/'frontend/dist/index.html').is_file():
     raise RuntimeError('Run cd frontend && npm run build before --static-only')
 with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
@@ -26,6 +27,13 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
     url=f'postgresql+psycopg://{getpass.getuser()}@/postgres?host={tmp}&port=55442'
     origin = 'http://127.0.0.1:5173' if http_dev_only else 'https://localhost:8443' if static_only else 'https://localhost:5173'
     env={**os.environ,'CLINIC_DATABASE_URL':url,'CLINIC_MIGRATION_DATABASE_URL':url,'CLINIC_PUBLIC_ORIGIN':origin,'CLINIC_ENV':'development' if http_dev_only else 'production'}
+    if render_demo_only:
+        env.update({'RENDER':'true','CLINIC_DEPLOYMENT':'render_demo','CLINIC_DEMO_PUBLIC_ENABLED':'true'})
+        env.pop('RENDER_EXTERNAL_HOSTNAME',None)
+    else:
+        env.pop('RENDER',None)
+        env.pop('CLINIC_DEPLOYMENT',None)
+        env.pop('CLINIC_DEMO_PUBLIC_ENABLED',None)
     if http_dev_only:
         env.pop('CLINIC_TEST_CERT',None)
         env.pop('CLINIC_TEST_KEY',None)
@@ -52,7 +60,7 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
         else: raise RuntimeError('Test servers failed to start')
         # The full flow reaches the per-account login throttle; isolated QA uses
         # its own disposable cluster rather than weakening production limits.
-        scripts = ['http_dev.mjs'] if http_dev_only else ['tls_probe.py'] if tls_only else ['static.mjs'] if static_only else ['qa.mjs'] if sys.argv[1:] == ['--qa-only'] else ['billing.mjs'] if sys.argv[1:] == ['--billing-only'] else ['browser.mjs', 'appointments.mjs', 'visits.mjs', 'billing.mjs']
+        scripts = ['render_demo.mjs'] if render_demo_only else ['http_dev.mjs'] if http_dev_only else ['tls_probe.py'] if tls_only else ['static.mjs'] if static_only else ['qa.mjs'] if sys.argv[1:] == ['--qa-only'] else ['billing.mjs'] if sys.argv[1:] == ['--billing-only'] else ['browser.mjs', 'appointments.mjs', 'visits.mjs', 'billing.mjs']
         for script in scripts:
             runner = str(ROOT/'backend/.venv/bin/python') if script.endswith('.py') else 'node'
             subprocess.run([runner,f'tests/{script}'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)

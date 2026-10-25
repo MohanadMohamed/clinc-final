@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1
+FROM node:22.22.3-bookworm-slim AS frontend-build
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+ENV VITE_DEMO_MODE=true
+RUN npm run build
+
+FROM python:3.14.4-slim-bookworm AS runtime
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /srv/clinic/backend
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && groupadd --system clinic && useradd --system --gid clinic --home /srv/clinic clinic
+COPY backend/app ./app
+COPY backend/migrations ./migrations
+COPY backend/alembic.ini ./alembic.ini
+COPY --from=frontend-build /build/frontend/dist /srv/clinic/frontend/dist
+COPY scripts/render_start.sh /srv/clinic/bin/render_start.sh
+RUN chmod 0555 /srv/clinic/bin/render_start.sh \
+    && chown -R clinic:clinic /srv/clinic
+USER clinic
+CMD ["/srv/clinic/bin/render_start.sh"]

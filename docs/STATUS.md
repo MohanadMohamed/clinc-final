@@ -1,5 +1,7 @@
 # Project status
 
+Updated: 2026-10-25. **Render portfolio demo preparation is implemented locally; public exposure is blocked pending image/security and live platform checks. Next planned clinic task remains 8A.** The [deployment guide](LIVE_DEMO_DEPLOYMENT.md) and [demo preparation report](tasks/live-demo.md) cover the closed-by-default, separate synthetic-only Render design. No Render resource, public deployment, Git push or real-data copy was made. The two-Windows-PC LAN architecture is unchanged.
+
 Updated: 2026-10-24. **Ubuntu loopback development fix complete; no new sprint started. Next planned task remains 8A.**
 
 [Local development fix](tasks/local-development-fix.md) adds explicit HTTP loopback mode, a local startup script, safe example configuration, and real disposable-DB/browser verification. The existing local doctor bootstrap marker and account were checked read-only; no credentials or records were displayed or changed. Production HTTPS defaults remain. Pre-existing 6A working-tree edits remain separate.

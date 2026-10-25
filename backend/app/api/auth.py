@@ -1,4 +1,5 @@
 import secrets
+from ipaddress import ip_address
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -38,6 +39,18 @@ class Me(BaseModel):
     id: UUID
     username: str
     role: Literal["doctor", "receptionist"]
+
+
+def throttle_client_ip(request: Request) -> str:
+    """Use Render's first XFF hop only for throttling, never authorization."""
+    peer = request.client.host
+    if request.app.state.settings.deployment != "render_demo":
+        return peer
+    first = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+    try:
+        return str(ip_address(first))
+    except ValueError:
+        return peer
 
 
 def origin(request, db):
@@ -97,7 +110,7 @@ def require_role(*roles: Literal["doctor", "receptionist"]):
 def csrf(request: Request, response: Response, db: DB):
     # Origin is required here too, preventing cross-site token churn.
     origin(request, db)
-    throttle(db, [("csrf:" + request.client.host, 60)])
+    throttle(db, [("csrf:" + throttle_client_ip(request), 60)])
     settings = request.app.state.settings
     session = load_session(db, request.cookies.get(cookie_name(settings)))
     if session:
@@ -115,7 +128,10 @@ def login(data: Login, request: Request, response: Response, db: DB):
     session = load_session(db, request.cookies.get(cookie_name(settings)))
     csrf_check(request, db, session)
     username = data.username.lower()
-    throttle(db, [("account:" + username, 5), ("login-ip:" + request.client.host, 30)])
+    throttle(
+        db,
+        [("account:" + username, 5), ("login-ip:" + throttle_client_ip(request), 30)],
+    )
     user = db.scalar(select(User).where(User.username == username))
     valid = verify(
         user.password_hash if user else DUMMY_HASH, data.password.get_secret_value()

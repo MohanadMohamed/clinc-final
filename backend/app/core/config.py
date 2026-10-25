@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
@@ -21,6 +22,8 @@ class Settings(BaseSettings):
     appointment_policy: SchedulingPolicy = SchedulingPolicy()
 
     env: Literal["development", "production"] = "production"
+    deployment: Literal["clinic_lan", "render_demo"] = "clinic_lan"
+    demo_public_enabled: bool = False
     public_origin: str = "https://clinic.local"
 
     @model_validator(mode="after")
@@ -46,6 +49,22 @@ class Settings(BaseSettings):
             or url.hostname not in {"127.0.0.1", "localhost", "::1"}
         ):
             raise ValueError("HTTP is allowed only for explicit loopback development")
+        on_render = os.environ.get("RENDER") == "true"
+        if on_render and (self.env != "production" or self.deployment != "render_demo"):
+            raise ValueError("Render requires explicit production demo configuration")
+        if self.deployment == "render_demo" and (
+            self.env != "production" or not on_render or url.scheme != "https"
+        ):
+            raise ValueError("Render demo requires the Render platform and HTTPS")
+        render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+        if (
+            self.deployment == "render_demo"
+            and render_host
+            and url.netloc != render_host
+        ):
+            raise ValueError("The demo origin must match its Render hostname")
+        if self.demo_public_enabled and self.deployment != "render_demo":
+            raise ValueError("Demo exposure flag is valid only for Render demo")
         return self
 
     @property
