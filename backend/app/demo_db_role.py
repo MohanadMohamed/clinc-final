@@ -50,7 +50,9 @@ def grant_app_tables(connection: psycopg.Connection, role: str) -> None:
             )
 
 
-def create_app_role(connection: psycopg.Connection, role: str, password: str) -> None:
+def create_app_role(
+    connection: psycopg.Connection, role: str, password: str, *, neon: bool = False
+) -> None:
     role = valid_role_name(role)
     if not 20 <= len(password) <= 128:
         raise ValueError("Use a unique role password of 20–128 characters")
@@ -61,10 +63,16 @@ def create_app_role(connection: psycopg.Connection, role: str, password: str) ->
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,))
         if cursor.fetchone():
             raise ValueError("Demo app role already exists; use --grant-existing")
-        # libpq derives the SCRAM verifier locally; plaintext never enters SQL text.
-        verifier = connection.pgconn.encrypt_password(
-            password.encode(), role.encode(), b"scram-sha-256"
-        ).decode("ascii")
+        # Neon explicitly does not support prehashed role passwords. Its local
+        # setup command validates TLS and suppresses SQL/error logging. Ordinary
+        # LAN/Render Postgres role setup continues to send only a SCRAM verifier.
+        verifier = (
+            password
+            if neon
+            else connection.pgconn.encrypt_password(
+                password.encode(), role.encode(), b"scram-sha-256"
+            ).decode("ascii")
+        )
         cursor.execute(
             sql.SQL(
                 "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD {}"
