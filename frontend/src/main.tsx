@@ -10,4 +10,4 @@ const queryClient = createQueryClient()
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode><QueryClientProvider client={queryClient}><BrowserRouter basename={import.meta.env.BASE_URL}><App /></BrowserRouter></QueryClientProvider></StrictMode>,
-)
+) 
