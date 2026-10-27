@@ -1,0 +1,104 @@
+name: Verify Render demo image
+
+# Manual, read-only gate. This workflow does not deploy or publish an image.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Audit pinned Python dependencies
+        uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266 # v1.1.0
+        with:
+          inputs: backend/requirements.txt
+          no-deps: true
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Audit bundled frontend dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build exact Render Dockerfile
+        run: docker build --pull --file Dockerfile.render --tag clinic-render-demo:verify .
+
+      - name: Verify copied files contain no local database or secrets
+        run: |
+          docker run --rm --interactive --network none --entrypoint python clinic-render-demo:verify - <<'PY'
+          from pathlib import Path
+
+          root = Path('/srv/clinic')
+          expected = {
+              root / 'backend/app/main.py',
+              root / 'backend/alembic.ini',
+              root / 'frontend/dist/index.html',
+              root / 'bin/render_start.sh',
+          }
+          assert all(path.is_file() for path in expected), 'Required app assets missing'
+          assert (root / 'backend/migrations').is_dir(), 'Migrations missing'
+          forbidden_suffixes = {'.key', '.pem', '.p12', '.pfx', '.sql', '.dump', '.bak', '.log', '.sqlite', '.db'}
+          forbidden = [
+              str(path.relative_to(root)) for path in root.rglob('*')
+              if path.name == '.git' or path.name == '.env' or path.name.startswith('.env.')
+              or (path.is_file() and path.suffix.lower() in forbidden_suffixes)
+          ]
+          assert not forbidden, 'Unexpected private files in image: ' + ', '.join(forbidden)
+          print('PASS: expected app files present; no forbidden private file names under /srv/clinic')
+          PY
+
+      - name: Verify closed production startup and routes
+        run: |
+          set -eu
+          docker run --detach --name clinic-demo-verify \
+            --publish 127.0.0.1:18080:10000 \
+            --env RENDER=true \
+            --env CLINIC_ENV=production \
+            --env CLINIC_DEPLOYMENT=render_demo \
+            --env CLINIC_PUBLIC_ORIGIN=https://demo.onrender.com \
+            --env RENDER_EXTERNAL_HOSTNAME=demo.onrender.com \
+            --env CLINIC_DATABASE_URL=postgresql+psycopg://localhost:1/unused \
+            clinic-render-demo:verify
+          trap 'docker rm --force clinic-demo-verify >/dev/null' EXIT
+          code=000
+          for attempt in $(seq 1 30); do
+            code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --header 'Host: demo.onrender.com' http://127.0.0.1:18080/api/health || true)
+            [ "$code" = 200 ] && break
+            sleep 1
+          done
+          if [ "$code" != 200 ]; then docker logs clinic-demo-verify; exit 1; fi
+          check() {
+            actual=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --header 'Host: demo.onrender.com' "http://127.0.0.1:18080$1")
+            [ "$actual" = "$2" ] || { echo "$1: expected $2, got $actual"; exit 1; }
+          }
+          check /api/health 200
+          check /api/health/ready 503 # Deliberately unreachable synthetic DB
+          check /app/ 503
+          check /api/auth/csrf 503
+          check /docs 404
+          echo 'PASS: production process starts with gate closed; only liveness is ready without a DB'
+
+      - name: Scan exact built image for critical and high vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: clinic-render-demo:verify
+          format: table
+          exit-code: '1'
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          ignore-unfixed: false

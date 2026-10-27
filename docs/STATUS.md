@@ -1,5 +1,7 @@
 # Project status
 
+Updated: 2026-10-27. **Live-demo local verification handoff recorded; the public and staging gates remain closed.** [Verification report](tasks/live-demo-verification.md) covers fresh build/browser/backend checks, dependency-advisory results, a cleaned public README and a manual, read-only [CI image gate](../.github/workflows/verify-render-demo.yml). Docker/image scan and actual Render restrictions/TLS/database isolation remain **NOT TESTED**, so public exposure is blocked. The two-Windows-PC LAN design and next planned clinic task **8A** are unchanged.
+
 Updated: 2026-10-25. **Render portfolio demo preparation is implemented locally; public exposure is blocked pending image/security and live platform checks. Next planned clinic task remains 8A.** The [deployment guide](LIVE_DEMO_DEPLOYMENT.md) and [demo preparation report](tasks/live-demo.md) cover the closed-by-default, separate synthetic-only Render design. No Render resource, public deployment, Git push or real-data copy was made. The two-Windows-PC LAN architecture is unchanged.
 
 Updated: 2026-10-24. **Ubuntu loopback development fix complete; no new sprint started. Next planned task remains 8A.**
