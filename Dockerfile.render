@@ -7,12 +7,14 @@ COPY frontend/ ./
 ENV VITE_DEMO_MODE=true
 RUN npm run build
 
-FROM python:3.14-slim-trixie AS runtime
+FROM python:3.14-alpine3.23 AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /srv/clinic/backend
+RUN apk add --no-cache ca-certificates
 COPY backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt \
-    && groupadd --system clinic && useradd --system --gid clinic --home /srv/clinic clinic
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt \
+    && pip uninstall -y setuptools pip \
+    && addgroup -S clinic && adduser -S -G clinic -h /srv/clinic clinic
 COPY backend/app ./app
 COPY backend/migrations ./migrations
 COPY backend/alembic.ini ./alembic.ini
