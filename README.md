@@ -36,6 +36,8 @@ scripts/      أدوات تشغيل وتحقق محلية
 compose.yaml  PostgreSQL اختيارية للتطوير، وليست طريقة التشغيل النهائية
 ```
 
+تقرير التحقق المحلي الحالي: [LOCAL_RELEASE_STATUS](docs/LOCAL_RELEASE_STATUS.md). أعمال النشر السحابي متوقفة؛ ليست مطلوبة لتشغيل العيادة.
+
 ## التشغيل المحلي على Ubuntu
 
 ### المتطلبات
@@ -64,6 +66,8 @@ cd ..
 ./scripts/dev_local.sh
 ```
 
+بعد تثبيت التبعيات وإعداد PostgreSQL محليًا، لا يحتاج التشغيل المعتاد إلى اتصال بالإنترنت. حافظ على إعداد قاعدة التطوير الحالي؛ لا تنسخ إعداد عرض سحابي إلى ملف `.env` المحلي.
+
 افتح **http://127.0.0.1:5173/login** وسجّل الدخول بحساب اختبار موجود. هذا السكريبت يستخدم HTTP على عنوان loopback فقط؛ ولا يفتح الخدمات على الشبكة المحلية. لا يعيد إنشاء الحسابات أو قاعدة البيانات.
 
 للتحقق من جاهزية الاتصال بقاعدة البيانات: **http://127.0.0.1:5173/api/health/ready**.
@@ -73,11 +77,19 @@ cd ..
 ## الاختبارات
 
 ```bash
-cd backend && .venv/bin/pytest -q
-cd ../frontend && npm test && npm run build
+cd backend
+CLINIC_ENV=production CLINIC_DEPLOYMENT=clinic_lan CLINIC_PUBLIC_ORIGIN=https://clinic.local .venv/bin/pytest -q
+cd ../frontend
+npm test
+npm run build
+cd ..
+backend/.venv/bin/python frontend/tests/run_browser.py --http-dev-only
+backend/.venv/bin/python frontend/tests/run_browser.py
+backend/.venv/bin/python frontend/tests/run_browser.py --qa-only
+backend/.venv/bin/python frontend/tests/run_browser.py --static-only
 ```
 
-تعتمد اختبارات الـBackend على بيئة PostgreSQL اختبارية منفصلة وفق إعدادات المستودع؛ راجع متطلباتها قبل التشغيل. تقارير الاختبارات المسجلة موجودة في [`docs/STATUS.md`](docs/STATUS.md) و[`docs/tasks/`](docs/tasks/).
+اختبارات الخادم والمتصفح تنشئ قواعد PostgreSQL مؤقتة مستقلة، ولا تستخدم سجلات قاعدة التطوير. تتطلب الاختبارات PostgreSQL 18 (الأدوات في `/usr/lib/postgresql/18/bin`)؛ اختبارات المتصفح تتطلب Chrome في `/usr/bin/google-chrome` والتبعيات المثبتة. شغّل اختبارات المتصفح بالتتابع بعد إيقاف خوادم التطوير التي تستخدم المنافذ 5173 و8000 و8443. تقارير الاختبارات المسجلة موجودة في [`docs/STATUS.md`](docs/STATUS.md) و[`docs/tasks/`](docs/tasks/).
 
 ## نطاق التشغيل الحالي وحدوده
 
@@ -85,7 +97,7 @@ cd ../frontend && npm test && npm run build
 - يوجد نموذج أولي لتشغيل واجهة React عبر FastAPI عند `/app/` ومشغّل `pywebview` في `desktop/`.
 - لم تُتحقق بعد حزم التثبيت النهائية بصيغة `.exe` أو تشغيل نظام العيادة على جهازَي Windows فعليين.
 - تصميم الشبكة المستهدف هو استضافة FastAPI وPostgreSQL على جهاز الطبيب، مع عميل فقط على جهاز الاستقبال واتصال HTTPS داخلي موثوق؛ **لم يكتمل التحقق العملي على Windows**.
-- توجد تهيئة منفصلة لعرض محفظة أعمال على Render بقاعدة بيانات اصطناعية مستقلة وبوابة مغلقة افتراضيًا؛ **لم تُبنَ الصورة داخل Docker هنا ولم يُنشأ نشر عام**. راجع [دليل العرض](docs/LIVE_DEMO_DEPLOYMENT.md) و[تقرير التحقق](docs/tasks/live-demo.md) قبل أي نشر.
+- تهيئة العرض السحابي محفوظة في [دليل منفصل](docs/LIVE_DEMO_DEPLOYMENT.md)، لكن العمل عليها **متوقف**. لا يحتاج التشغيل المحلي Render أو Neon أو Docker أو نطاقًا عامًا. لا تنفذ خطوات العرض ضمن إعداد العيادة.
 - التطبيق **ليس معتمدًا حاليًا لاستخدام بيانات مرضى حقيقية**؛ ما زالت هناك متطلبات تشغيل وأمان ونسخ احتياطي واستعادة ومراجعة خصوصية قبل ذلك.
 
 **يُستخدم في التطوير والعرض ببيانات وهمية فقط.**

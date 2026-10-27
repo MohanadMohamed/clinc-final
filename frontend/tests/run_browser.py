@@ -2,6 +2,7 @@
 import getpass
 import os
 import secrets
+import signal
 import subprocess
 import tempfile
 import time
@@ -48,13 +49,19 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
         api_args=[str(ROOT/'backend/.venv/bin/uvicorn'),'app.main:app','--host','127.0.0.1','--port','8000' if http_dev_only else '8443']
         if not http_dev_only: api_args+=['--ssl-certfile',str(cert),'--ssl-keyfile',str(key)]
         api_args+=['--no-access-log','--no-proxy-headers']
-        servers.append(subprocess.Popen(api_args,cwd=ROOT/'backend',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL))
-        if not static_only:
+        if http_dev_only:
+            # Exercise the documented launcher from outside the repository.
+            # A separate process group also contains uvicorn's reload child.
+            servers.append(subprocess.Popen([str(ROOT/'scripts/dev_local.sh')],cwd=root,env=env,start_new_session=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL))
+        else:
+            servers.append(subprocess.Popen(api_args,cwd=ROOT/'backend',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL))
+        if not static_only and not http_dev_only:
             servers.append(subprocess.Popen(['npm','run','dev','--','--host','127.0.0.1'],cwd=ROOT/'frontend',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL))
         for _ in range(80):
             try:
                 import ssl
                 urlopen(origin + ('/app/' if static_only else '/'),context=None if http_dev_only else ssl.create_default_context(cafile=str(cert)),timeout=1).close()
+                urlopen(origin + '/api/health/ready',context=None if http_dev_only else ssl.create_default_context(cafile=str(cert)),timeout=1).close()
                 break
             except Exception: time.sleep(.25)
         else: raise RuntimeError('Test servers failed to start')
@@ -72,7 +79,13 @@ with tempfile.TemporaryDirectory(prefix='clinic-browser-') as tmp:
             subprocess.run(['node','tests/after_restart.mjs'],cwd=ROOT/'frontend',env={**env,'TEST_PASSWORD':password},check=True)
     finally:
         for server in reversed(servers):
-            server.terminate()
+            if http_dev_only:
+                try: os.killpg(server.pid,signal.SIGTERM)
+                except ProcessLookupError: pass
+            else: server.terminate()
             try:server.wait(timeout=5)
-            except subprocess.TimeoutExpired:server.kill()
+            except subprocess.TimeoutExpired:
+                if http_dev_only: os.killpg(server.pid,signal.SIGKILL)
+                else: server.kill()
+                server.wait(timeout=5)
         subprocess.run(ctl+['-m','fast','-w','stop'],check=True,stdout=subprocess.DEVNULL)
