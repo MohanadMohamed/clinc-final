@@ -1,1 +1,1 @@
-pywebview
+pywebview==6.2.1

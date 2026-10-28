@@ -1,5 +1,7 @@
 # LAN / TLS deployment plan — Task 7B
 
+Milestone 8A adds [Windows build preparation](../../docs/WINDOWS_8A_STATUS.md): `Build-Windows.ps1`, `ClinicClient.spec`, hash-pinned desktop build requirements, allowlisted host staging and separate origin-only client profiles. Those tools do not apply these machine templates. Windows execution, EXE and service installation remain **NOT TESTED**.
+
 These are review templates, not an installer. No Windows settings have been applied. Validate the non-secret plan from the repository root with `python3 -m desktop.packaging.config desktop/packaging/lan.example.toml`. Replace example addresses with clinic reservations. Never put passwords, private-key contents or tokens in this plan.
 
 ## Two PCs and one origin

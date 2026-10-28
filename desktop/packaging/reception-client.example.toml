@@ -1,0 +1,2 @@
+# Reception PC: client only; no backend, database, or credentials in this profile.
+server_url = "https://doctor.clinic.home.arpa:8443"

@@ -1,0 +1,3 @@
+# Non-secret origin only. Both clients use the same trusted doctor-host origin.
+# Windows account/client profile does not grant the doctor role.
+server_url = "https://doctor.clinic.home.arpa:8443"

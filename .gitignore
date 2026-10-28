@@ -22,3 +22,5 @@ backups/
 **/playwright-report/
 *.pfx
 *.tsbuildinfo
+/.build-venv/
+/artifacts/
