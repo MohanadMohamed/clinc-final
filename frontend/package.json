@@ -1,1 +1,45 @@
-{"name":"clinic-ui","private":true,"version":"0.0.0","type":"module","packageManager":"npm@9.2.0","engines":{"node":">=22.12.0 <23"},"scripts":{"dev":"vite","build":"tsc --noEmit && vite build","typecheck":"tsc --noEmit","test":"vitest run"},"dependencies":{"@tanstack/react-query":"5.104.5","clsx":"2.1.1","lucide-react":"1.61.0","react":"19.3.1","react-dom":"19.3.1","react-hook-form":"7.90.0","react-router-dom":"7.18.4","tailwind-merge":"3.7.0","zod":"4.6.7"},"devDependencies":{"@playwright/test":"1.64.1","@tailwindcss/vite":"4.3.3","@testing-library/jest-dom":"7.0.1","@testing-library/react":"16.3.3","@types/node":"26.6.5","@types/react":"19.3.0","@types/react-dom":"19.3.0","@vitejs/plugin-react":"6.1.2","jsdom":"26.1.0","tailwindcss":"4.3.3","typescript":"5.9.3","vite":"8.3.5","vitest":"5.0.5"}}
+{
+  "name": "clinic-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "npm@9.2.0",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build:portfolio": "tsc --noEmit -p portfolio/tsconfig.json && vite build --config vite.portfolio.config.ts",
+    "test:portfolio": "node tests/portfolio.mjs",
+    "audit:portfolio": "node tests/audit_portfolio.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.104.5",
+    "clsx": "2.1.1",
+    "lucide-react": "1.61.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-hook-form": "7.90.0",
+    "react-router-dom": "7.18.4",
+    "tailwind-merge": "3.7.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "26.1.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

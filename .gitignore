@@ -24,3 +24,5 @@ backups/
 *.tsbuildinfo
 /.build-venv/
 /artifacts/
+
+/frontend/portfolio-dist/

@@ -1,0 +1,136 @@
+import { chromium, expect } from '@playwright/test'
+import { createServer } from 'node:http'
+import { readFile, mkdir } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const dist=path.resolve(fileURLToPath(new URL('../portfolio-dist/',import.meta.url)))
+let server
+let base=process.env.PORTFOLIO_URL
+if(!base){
+ server=createServer(async(req,res)=>{
+  const url=new URL(req.url,'http://localhost'),prefix='/clinc-final/'
+  if(!url.pathname.startsWith(prefix)){res.writeHead(404);res.end();return}
+  const relative=decodeURIComponent(url.pathname.slice(prefix.length))||'index.html'
+  const file=path.resolve(dist,relative)
+  if(!file.startsWith(dist+path.sep)){res.writeHead(403);res.end();return}
+  try{const bytes=await readFile(file);res.writeHead(200,{'content-type':({'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream'});res.end(bytes)}catch{res.writeHead(404);res.end()}
+ })
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
+ base=`http://127.0.0.1:${server.address().port}/clinc-final/`
+}
+const browser=await chromium.launch({headless:true,...(!process.env.CI?{executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH||'/usr/bin/google-chrome'}:{})})
+const failures=[],network=[],contexts=[]
+const output=fileURLToPath(new URL('../test-results/',import.meta.url))
+await mkdir(output,{recursive:true})
+async function open(role,viewport={width:1440,height:900}){
+ const context=await browser.newContext({viewport});contexts.push(context)
+ const page=await context.newPage();page.setDefaultTimeout(15000)
+ page.on('pageerror',e=>failures.push(e.message))
+ page.on('console',m=>{if(m.type()==='error')failures.push(m.text())})
+ page.on('request',r=>{const url=new URL(r.url());if(url.origin!==new URL(base).origin||/\/api(?:\/|$)/.test(url.pathname)||['fetch','xhr','websocket','eventsource'].includes(r.resourceType()))network.push(r.resourceType()+':'+url.pathname)})
+ page.on('response',r=>{if(r.status()>=400)failures.push('HTTP '+r.status()+' '+new URL(r.url()).pathname)})
+ page.on('dialog',dialog=>dialog.accept())
+ await page.goto(base)
+ await expect(page.getByText('PORTFOLIO DEMO — SYNTHETIC DATA',{exact:true})).toBeVisible()
+ await expect(page.locator('input[type=password]')).toHaveCount(0)
+ if(role==='doctor')await page.screenshot({path:path.join(output,'portfolio-landing.png'),fullPage:true})
+ await expect(page.getByRole('link',{name:'View Source on GitHub'})).toHaveAttribute('href','https://github.com/MohanadMohamed/clinc-final')
+ await page.getByRole('button',{name:role==='doctor'?'Explore as Doctor':'Explore as Receptionist',exact:true}).click()
+ await expect(page.getByRole('heading',{name:'نظرة عامة على العيادة'})).toBeVisible()
+ return page
+}
+async function nav(page,name){if(await page.getByRole('button',{name:'فتح القائمة'}).isVisible())await page.getByRole('button',{name:'فتح القائمة'}).click();await page.getByRole('link',{name,exact:true}).click()}
+async function layout(page){const value=await page.evaluate(()=>({width:innerWidth,document:document.documentElement.scrollWidth,lang:document.documentElement.lang,dir:document.documentElement.dir}));expect(value.document).toBeLessThanOrEqual(value.width);expect(value.lang).toBe('ar');expect(value.dir).toBe('rtl')}
+try{
+ const doctor=await open('doctor')
+ await layout(doctor)
+ await doctor.screenshot({path:path.join(output,'portfolio-doctor.png'),fullPage:true})
+ await nav(doctor,'المرضى')
+ await doctor.getByRole('button',{name:'إضافة مريض',exact:true}).click()
+ let dialog=doctor.getByRole('dialog',{name:'إضافة مريض'})
+ await dialog.getByLabel('الاسم الكامل').fill('مريض اصطناعي للجولة')
+ await dialog.getByLabel('رقم الهاتف').fill('00000007777')
+ await dialog.getByRole('button',{name:'حفظ',exact:true}).click()
+ await expect(dialog).not.toBeVisible()
+ await doctor.getByLabel('ابحث بالاسم أو رقم الهاتف').fill('مريض اصطناعي للجولة')
+ await doctor.getByRole('button',{name:'بحث',exact:true}).click()
+ await doctor.getByRole('button',{name:'عرض التفاصيل'}).click()
+ const details=doctor.getByRole('dialog',{name:'تفاصيل المريض'})
+ await details.getByRole('button',{name:'تعديل',exact:true}).click()
+ dialog=doctor.getByRole('dialog',{name:'تعديل المريض'})
+ await dialog.getByLabel('الاسم الكامل').fill('مريض اصطناعي للجولة معدل')
+ await dialog.getByRole('button',{name:'حفظ',exact:true}).click()
+ await expect(details.getByText('مريض اصطناعي للجولة معدل',{exact:true})).toBeVisible()
+ await details.getByRole('button',{name:'إغلاق',exact:true}).click()
+ await nav(doctor,'المواعيد')
+ const future=new Date(Date.now()+3*86400000).toISOString().slice(0,10)
+ await doctor.getByLabel('اليوم',{exact:true}).fill(future)
+ async function booking(){await doctor.getByRole('button',{name:'حجز موعد',exact:true}).click();const d=doctor.getByRole('dialog',{name:'حجز موعد'});await d.getByLabel('ابحث عن مريض بالاسم أو الهاتف').fill('مريض اصطناعي للجولة');await expect(d.locator('#appointment-patient option')).toHaveCount(2);await d.locator('#appointment-patient').selectOption({index:1});await d.getByLabel('من',{exact:true}).fill('12:00');await d.getByLabel('إلى',{exact:true}).fill('12:30');await d.getByRole('button',{name:'حجز الموعد',exact:true}).click();return d}
+ dialog=await booking();await expect(dialog).not.toBeVisible()
+ await expect(doctor.getByText('عدد المواعيد المطابقة: 1')).toBeVisible()
+ dialog=await booking();await expect(dialog.getByRole('alert')).toContainText('الموعد محجوز بالفعل');await dialog.getByRole('button',{name:'إلغاء',exact:true}).click()
+ await doctor.getByRole('button',{name:'إعادة جدولة',exact:true}).click()
+ dialog=doctor.getByRole('dialog',{name:'إعادة جدولة الموعد'})
+ await dialog.getByLabel('من',{exact:true}).fill('12:30');await dialog.getByLabel('إلى',{exact:true}).fill('13:00');await dialog.getByRole('button',{name:'تأكيد الموعد الجديد'}).click();await expect(dialog).not.toBeVisible()
+ await nav(doctor,'مساحة الطبيب')
+ await doctor.getByLabel('يوم الموعد').fill(future)
+ await doctor.getByRole('button',{name:'بدء الزيارة',exact:true}).click()
+ await doctor.getByLabel('الملاحظات العصبية').fill('ملاحظة اصطناعية لاختبار الجولة فقط')
+ await doctor.getByLabel('خطة المتابعة').fill('خطة اصطناعية دون نصيحة طبية')
+ await doctor.getByRole('button',{name:'حفظ المسودة'}).click()
+ await expect(doctor.getByText('تم حفظ المسودة بنجاح')).toBeVisible()
+ await doctor.getByRole('button',{name:'اعتماد الزيارة'}).click()
+ await expect(doctor.getByText('تم اعتماد الزيارة',{exact:true})).toBeVisible()
+ await nav(doctor,'المواعيد')
+ await doctor.getByLabel('اليوم',{exact:true}).fill(future)
+ await doctor.getByRole('button',{name:'إلغاء',exact:true}).click()
+ await doctor.getByRole('dialog',{name:'تأكيد إلغاء الموعد'}).getByRole('button',{name:'تأكيد الإلغاء'}).click()
+ await expect(doctor.getByText('عدد المواعيد المطابقة: 0')).toBeVisible()
+ await doctor.locator('#schedule-filter').selectOption('cancelled')
+ await expect(doctor.getByText('عدد المواعيد المطابقة: 1')).toBeVisible()
+ await nav(doctor,'الفواتير')
+ const creation=doctor.locator('.billing-panel').filter({has:doctor.getByRole('heading',{name:'إنشاء فاتورة',exact:true})})
+ await creation.getByLabel('ابحث عن مريض بالاسم أو الهاتف').fill('مريض اصطناعي للجولة')
+ await expect(creation.locator('select').first().locator('option')).toHaveCount(2)
+ await creation.locator('select').first().selectOption({index:1})
+ await creation.getByRole('button',{name:'إنشاء فاتورة',exact:true}).click()
+ await expect(doctor.getByText('تم إنشاء مسودة الفاتورة')).toBeVisible()
+ await doctor.getByRole('button',{name:'إصدار الفاتورة',exact:true}).click()
+ await expect(doctor.getByText('تم إصدار الفاتورة',{exact:true})).toBeVisible()
+ const invoice=doctor.locator('.billing-panel').filter({has:doctor.getByRole('heading',{name:'تفاصيل الفاتورة',exact:true})})
+ await invoice.getByRole('textbox').fill('50.50')
+ await invoice.getByRole('button',{name:'تسجيل الدفعة',exact:true}).click()
+ await expect(doctor.getByText('تم تسجيل الدفعة النقدية')).toBeVisible()
+ await doctor.getByRole('button',{name:'عرض إيصال',exact:true}).click()
+ const receipt=doctor.getByRole('region',{name:'إيصال نقدي'})
+ await expect(receipt).toBeVisible();await expect(receipt).toContainText('٥٠٫50 ج.م')
+ expect(await receipt.evaluate(el=>getComputedStyle(el,'::before').content)).toContain('SYNTHETIC DATA')
+ await doctor.screenshot({path:path.join(output,'portfolio-billing.png'),fullPage:true})
+ await nav(doctor,'المرضى')
+ await doctor.getByLabel('ابحث بالاسم أو رقم الهاتف').fill('مريض اصطناعي للجولة');await doctor.getByRole('button',{name:'بحث',exact:true}).click();await doctor.getByRole('button',{name:'عرض التفاصيل'}).click()
+ await doctor.getByRole('dialog',{name:'تفاصيل المريض'}).getByRole('button',{name:'أرشفة',exact:true}).click();await doctor.getByRole('button',{name:'تأكيد الأرشفة'}).click();await expect(doctor.getByRole('dialog',{name:'تفاصيل المريض'})).toContainText('مؤرشف');await doctor.getByRole('button',{name:'إغلاق',exact:true}).click()
+ await doctor.reload();await expect(doctor.getByRole('button',{name:'Explore as Doctor',exact:true})).toBeVisible()
+ await doctor.getByRole('button',{name:'Explore as Doctor',exact:true}).click();await nav(doctor,'المرضى');await expect(doctor.getByText('عدد السجلات: 12')).toBeVisible()
+ await doctor.reload();await doctor.getByRole('button',{name:'Explore as Doctor',exact:true}).click();await expect(doctor.getByRole('heading',{name:'المرضى',exact:true})).toBeVisible()
+ const reception=await open('receptionist',{width:390,height:844})
+ await layout(reception)
+ await reception.screenshot({path:path.join(output,'portfolio-reception-mobile.png'),fullPage:true})
+ await reception.getByRole('button',{name:'فتح القائمة'}).click();await expect(reception.getByRole('link',{name:'مساحة الطبيب'})).toHaveCount(0);await reception.getByRole('link',{name:'الفواتير',exact:true}).click()
+ await expect(reception.getByRole('button',{name:'حفظ الرسم'})).toHaveCount(0)
+ await reception.getByRole('button',{name:'عرض',exact:true}).first().click()
+ const receptionInvoice=reception.locator('.billing-panel').filter({has:reception.getByRole('heading',{name:'تفاصيل الفاتورة',exact:true})})
+ await receptionInvoice.getByRole('textbox').fill('10.00');await receptionInvoice.getByRole('button',{name:'تسجيل الدفعة',exact:true}).click();await expect(reception.getByText('تم تسجيل الدفعة النقدية')).toBeVisible()
+ await layout(reception)
+ await reception.goto(base+'#/workspace');await expect(reception.getByRole('heading',{name:'نظرة عامة على العيادة'})).toBeVisible()
+ await nav(reception,'المرضى');await expect(reception.getByText('عدد السجلات: 12')).toBeVisible()
+ await reception.getByRole('button',{name:'إضافة مريض',exact:true}).click();dialog=reception.getByRole('dialog',{name:'إضافة مريض'});await dialog.getByLabel('الاسم الكامل').fill('مريض اصطناعي للاستقبال');await dialog.getByLabel('رقم الهاتف').fill('00000008888');await dialog.getByRole('button',{name:'حفظ',exact:true}).click();await expect(dialog).not.toBeVisible()
+ await nav(reception,'نظرة عامة')
+ await expect(reception.locator('.demo-statistics')).toContainText('١٣')
+ await reception.getByRole('button',{name:'إعادة العرض'}).click();await expect(reception.locator('.demo-statistics')).toContainText('١٢')
+ await reception.getByRole('button',{name:'تغيير المنظور'}).click();await expect(reception.getByRole('button',{name:'Explore as Doctor',exact:true})).toBeVisible()
+ expect(await doctor.evaluate(()=>localStorage.length+sessionStorage.length)).toBe(0)
+ expect(network,'No API/fetch/XHR/WebSocket/external requests').toEqual([])
+ expect(failures,'No missing assets or console/page errors').toEqual([])
+ console.log('PASS portfolio browser: both simulated roles, patient create/edit/archive, booking/conflict/reschedule/cancel, visit save/finalize, invoice/payment/receipt, live counters/reset, hash refresh, mobile RTL, no network/API/storage/errors')
+}finally{await Promise.all(contexts.map(c=>c.close()));await browser.close();if(server)await new Promise(resolve=>server.close(resolve))}
