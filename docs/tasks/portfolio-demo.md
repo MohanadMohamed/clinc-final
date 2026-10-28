@@ -26,4 +26,14 @@ An initial smoke-server path guard and test-label selectors were corrected befor
 
 ## Hosted verification
 
-Pending workflow publication and live browser verification. Expected Pages origin: `https://mohanadmohamed.github.io/clinc-final/`. This report will record the actual deployment result after the workflow finishes. This public showcase is not real authentication, a medical service or backend security verification. Refresh clears changes; public synthetic bundle content can be inspected regardless of simulated perspective.
+**PASS:** [GitHub Actions run 40691113747](https://github.com/MohanadMohamed/clinc-final/actions/runs/40691113747) built, tested, audited and deployed application commit `81d7170` successfully. Only the four isolated static assets were published. Pages was configured for GitHub Actions; HTTPS is enforced and no manual setup is required.
+
+**Verified live URL:** [https://mohanadmohamed.github.io/clinc-final/](https://mohanadmohamed.github.io/clinc-final/).
+
+**PASS:** `PORTFOLIO_URL=https://mohanadmohamed.github.io/clinc-final/ npm --prefix frontend run test:portfolio` completed the same full browser flow against the public site in both simulated roles, including desktop/mobile RTL, hash refresh, patient edits, appointments/conflicts, clinical drafts/finalization, billing, receipts, counters and reset. No API/data requests, external asset requests, browser errors, missing assets or persistent browser storage were observed.
+
+**PASS:** Independent HTTPS fetch of the hosted index and all three linked JS/CSS/SVG assets returned HTTP 200, the correct base/CSP, and no backend/secret-format findings. Certificate verification was not bypassed.
+
+Remaining issue: GitHub Actions prints nonblocking Node.js 20 deprecation notices for pinned action metadata while executing those actions on Node.js 24. The workflow passed; updating action pins is future maintenance, not a demo blocker. No known functional blockers remain in the exercised flows.
+
+ This public showcase is not real authentication, a medical service or backend security verification. Refresh clears changes; public synthetic bundle content can be inspected regardless of simulated perspective.
